@@ -52,3 +52,17 @@ So interop with the official apps does not get the native speed-up.
 
 `POST /api/localsend/v2/zajel/benchmark` reads and discards the body and answers `{"bytes", "ms"}`.
 No file is written. Zajel receivers only.
+
+## Many small files as one archive
+
+When at least 4 files smaller than 256 KB are accepted, a Zajel sender sends them as one tar archive instead
+of one request each. The receiver offers it with `x-zajel-tar-token` in the `prepare-upload` response.
+
+- `POST /api/localsend/v2/zajel/tar?sessionId=&token=<tarToken>`, body is a ustar archive.
+- **Entry names are file ids, never paths.** The receiver maps each id to the destination it already chose
+  for that file (sanitized as always), so an archive cannot write anywhere else. Unknown ids, a size that
+  differs from `prepare-upload`, non-regular entries (directories, symlinks), a bad header checksum, a
+  truncated archive or a missing end marker are all refused with `400`. A `sha256` mismatch is `422`.
+- Files finish one by one, so an interrupted archive keeps everything that completed.
+- `GET /api/localsend/v2/zajel/tar-status?sessionId=&token=` lists the ids already received, so a resumed
+  upload sends only the rest.

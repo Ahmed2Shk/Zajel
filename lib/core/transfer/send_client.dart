@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import '../security/device_identity.dart';
 import 'protocol_models.dart';
 import 'range_set.dart';
+import 'tar_stream.dart';
 
 /// A local file queued for sending.
 class SendFile {
@@ -57,6 +58,7 @@ class SendSession {
     required this.target,
     this.chunked = false,
     this.dataPort,
+    this.tarToken,
   });
 
   final String sessionId;
@@ -68,6 +70,9 @@ class SendSession {
 
   /// Where an Android receiver's native data server listens, if it has one.
   final int? dataPort;
+
+  /// Authorizes the tar upload of small files, when the receiver offers it.
+  final String? tarToken;
 }
 
 /// Tuning for chunked uploads (Zajel-to-Zajel only).
@@ -76,6 +81,8 @@ class UploadOptions {
     this.chunkSize = 8 * 1024 * 1024,
     this.parallel = 4,
     this.retries = 3,
+    this.tarMaxFileSize = 256 * 1024,
+    this.tarMinFiles = 4,
   });
 
   /// Chunks are 4-8 MB: big enough to keep the link busy, small enough that a
@@ -87,6 +94,12 @@ class UploadOptions {
 
   /// Extra attempts for a failed chunk before the transfer fails.
   final int retries;
+
+  /// Files smaller than this are bundled into one tar request...
+  final int tarMaxFileSize;
+
+  /// ...when there are at least this many of them.
+  final int tarMinFiles;
 }
 
 class BenchmarkResult {
@@ -159,6 +172,7 @@ class SendClient {
       target: peer,
       chunked: chunked,
       dataPort: chunked ? int.tryParse(response.dataPort ?? '') : null,
+      tarToken: chunked ? response.tarToken : null,
     );
   }
 
@@ -176,15 +190,104 @@ class SendClient {
     bool Function()? isCancelled,
     UploadOptions options = const UploadOptions(),
   }) async {
+    // Many small files go as one tar request, which saves a round trip each.
+    final bundled = <String>{};
+    final tarToken = session.tarToken;
+    if (tarToken != null) {
+      final small = [
+        for (final file in files)
+          if (session.tokens.containsKey(file.id) &&
+              file.size < options.tarMaxFileSize &&
+              utf8.encode(file.id).length <= 100)
+            file,
+      ];
+      if (small.length >= options.tarMinFiles) {
+        await _uploadTar(session, tarToken, small, onProgress, isCancelled);
+        bundled.addAll(small.map((f) => f.id));
+      }
+    }
+
     for (final file in files) {
       final token = session.tokens[file.id];
       if (token == null) continue; // declined by the receiver
+      if (bundled.contains(file.id)) continue;
       if (isCancelled?.call() ?? false) return;
       if (session.chunked && file.size >= options.chunkSize) {
         await _uploadChunked(session, file, token, options, onProgress, isCancelled);
       } else {
         await _uploadOne(session, file, token, onProgress, isCancelled);
       }
+    }
+  }
+
+  /// Sends [files] as one tar archive. Entry names are the file ids. After a
+  /// dropped connection, calling this again sends only the files the receiver
+  /// has not finished.
+  Future<void> _uploadTar(
+    SendSession session,
+    String tarToken,
+    List<SendFile> files,
+    void Function(String fileId, int sent)? onProgress,
+    bool Function()? isCancelled,
+  ) async {
+    final client = _newClient(session.target);
+    try {
+      final query = {'sessionId': session.sessionId, 'token': tarToken};
+
+      final statusRequest = await client.getUrl(
+        _uri(session.target, '/zajel/tar-status', query),
+      );
+      final statusResponse = await statusRequest.close();
+      final statusBody = await utf8.decodeStream(statusResponse);
+      final done = statusResponse.statusCode == 200
+          ? ((jsonDecode(statusBody) as Map<String, dynamic>)['done'] as List)
+                .cast<String>()
+                .toSet()
+          : <String>{};
+      for (final file in files.where((f) => done.contains(f.id))) {
+        onProgress?.call(file.id, file.size);
+      }
+      final remaining = [
+        for (final file in files)
+          if (!done.contains(file.id)) file,
+      ];
+      if (remaining.isEmpty) return;
+
+      final entries = [
+        for (final file in remaining)
+          TarEntry(
+            name: file.id,
+            size: file.size,
+            open: () => file.file.openRead(),
+          ),
+      ];
+      final request = await client.postUrl(
+        _uri(session.target, '/zajel/tar', query),
+      );
+      request.headers
+        ..contentType = ContentType.binary
+        ..contentLength = tarLength(entries);
+      await request.addStream(
+        tarEncode(
+          entries,
+          onBytes: (name, bytes) => onProgress?.call(name, bytes),
+        ).map((chunk) {
+          if (isCancelled?.call() ?? false) {
+            throw const SendException('Cancelled');
+          }
+          return chunk;
+        }),
+      );
+      final response = await request.close();
+      final body = await utf8.decodeStream(response);
+      if (response.statusCode != 200) {
+        throw SendException(
+          _messageOf(body) ?? 'Archive upload failed',
+          statusCode: response.statusCode,
+        );
+      }
+    } finally {
+      client.close(force: true);
     }
   }
 
@@ -483,6 +586,7 @@ class SendClient {
         text,
         response.headers.value(zajelExtensionHeader),
         response.headers.value(zajelDataPortHeader),
+        response.headers.value(zajelTarTokenHeader),
       );
     } finally {
       client.close(force: true);
@@ -530,11 +634,18 @@ class SendClient {
 }
 
 class _Response {
-  const _Response(this.status, this.body, this.extension, this.dataPort);
+  const _Response(
+    this.status,
+    this.body,
+    this.extension,
+    this.dataPort,
+    this.tarToken,
+  );
   final int status;
   final String body;
   final String? extension;
   final String? dataPort;
+  final String? tarToken;
 }
 
 /// SHA-256 of a file, streamed (used by tests and optional pre-hashing).

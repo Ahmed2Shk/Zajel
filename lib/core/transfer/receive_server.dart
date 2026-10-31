@@ -11,6 +11,7 @@ import '../security/device_identity.dart';
 import '../security/file_name_sanitizer.dart';
 import 'protocol_models.dart';
 import 'range_set.dart';
+import 'tar_stream.dart';
 
 /// What the receiver sees when a sender asks to upload files.
 class IncomingTransfer {
@@ -109,11 +110,14 @@ class _AcceptedFile {
 }
 
 class _Session {
-  _Session(this.id, this.transfer, this.files);
+  _Session(this.id, this.transfer, this.files, this.tarToken);
 
   final String id;
   final IncomingTransfer transfer;
   final Map<String, _AcceptedFile> files;
+
+  /// Authorizes the tar upload of small files for this session.
+  final String tarToken;
 
   bool get finished => files.values.every((f) => f.done);
 }
@@ -166,6 +170,11 @@ class ReceiveServer {
   _Session? _session;
 
   Stream<ReceiveEvent> get events => _events.stream;
+
+  /// How many plain uploads and tar uploads were served. For tests and the
+  /// benchmark, to see which route a transfer used.
+  int plainUploadRequests = 0;
+  int tarUploadRequests = 0;
   int get port => _server!.port;
 
   Future<void> start({
@@ -221,6 +230,10 @@ class ReceiveServer {
           await _progress(request);
         case ('POST', zajelBenchmarkRoute) when enableChunking:
           await _benchmark(request);
+        case ('POST', zajelTarRoute) when enableChunking:
+          await _uploadTar(request);
+        case ('GET', zajelTarStatusRoute) when enableChunking:
+          await _tarStatus(request);
         default:
           await _empty(request, 404);
       }
@@ -228,6 +241,8 @@ class ReceiveServer {
       await _empty(request, e.status, message: e.message);
     } on FormatException {
       await _empty(request, 400, message: 'Invalid body');
+    } on TarFormatException catch (e) {
+      await _empty(request, 400, message: e.toString());
     } on UnsafeFileNameException catch (e) {
       await _empty(request, 400, message: e.toString());
     } catch (_) {
@@ -283,6 +298,7 @@ class ReceiveServer {
           if (body.files.containsKey(id))
             id: _AcceptedFile(body.files[id]!, _randomToken()),
       },
+      _randomToken(),
     );
     _session = session;
     _touch();
@@ -325,6 +341,7 @@ class ReceiveServer {
       headers: {
         if (extensions) zajelExtensionHeader: zajelExtensionVersion,
         zajelDataPortHeader: ?(dataPort == null ? null : '$dataPort'),
+        if (extensions) zajelTarTokenHeader: session.tarToken,
       },
     );
   }
@@ -354,6 +371,7 @@ class ReceiveServer {
   Future<void> _upload(HttpRequest request) async {
     final (session, file, fileId) = _authorize(request);
     if (file.done) throw const _HttpError(403, 'Invalid token or IP address');
+    plainUploadRequests++;
 
     if (enableChunking && request.uri.queryParameters.containsKey('offset')) {
       await _uploadChunk(request, session, file, fileId);
@@ -583,6 +601,88 @@ class ReceiveServer {
       'done': file.done,
       'ranges': file.done ? [[0, file.meta.size]] : file.received.toJson(),
     });
+  }
+
+  _Session _authorizeTar(HttpRequest request) {
+    final query = request.uri.queryParameters;
+    final session = _session;
+    final token = query['token'];
+    if (session == null ||
+        query['sessionId'] != session.id ||
+        token == null ||
+        !_constantTimeEquals(token, session.tarToken) ||
+        request.connectionInfo!.remoteAddress != session.transfer.senderAddress) {
+      throw const _HttpError(403, 'Invalid token or IP address');
+    }
+    return session;
+  }
+
+  /// Which files of the session are already complete, so a sender that lost
+  /// its connection mid-archive sends only the rest.
+  Future<void> _tarStatus(HttpRequest request) async {
+    final session = _authorizeTar(request);
+    await _json(request, 200, {
+      'done': [
+        for (final e in session.files.entries)
+          if (e.value.done) e.key,
+      ],
+    });
+  }
+
+  /// Many small files in one tar request. Entry names are file ids, never
+  /// paths: each file lands at the destination this receiver chose for it, so
+  /// an archive cannot write anywhere else. Files are finished one by one, so
+  /// an interrupted archive keeps everything that completed.
+  Future<void> _uploadTar(HttpRequest request) async {
+    final session = _authorizeTar(request);
+    tarUploadRequests++;
+    await TarReader(request).read((header, content) async {
+      final file = session.files[header.name];
+      if (file == null) throw const _HttpError(400, 'Unknown file in archive');
+      if (file.done) throw const _HttpError(409, 'File already received');
+      if (header.size != file.meta.size) {
+        throw const _HttpError(400, 'Size mismatch');
+      }
+
+      final part = await _reserve(file);
+      final digestSink = _DigestCollector();
+      final hasher = sha256.startChunkedConversion(digestSink);
+      final sink = part.openWrite();
+      var received = 0;
+      try {
+        while (true) {
+          final piece = await content.read();
+          if (piece == null) break;
+          hasher.add(piece);
+          sink.add(piece);
+          received += piece.length;
+          _touch();
+        }
+        await sink.close();
+      } catch (_) {
+        await sink.close().catchError((_) {});
+        await _deleteQuietly(part);
+        rethrow;
+      }
+      hasher.close();
+
+      final expected = file.meta.sha256;
+      if (received != file.meta.size ||
+          (expected != null &&
+              expected.toLowerCase() != digestSink.digest.toString())) {
+        await _deleteQuietly(part);
+        throw _HttpError(
+          received != file.meta.size ? 400 : 422,
+          received != file.meta.size ? 'Size mismatch' : 'Checksum mismatch',
+        );
+      }
+      await part.rename(file.destination!.path);
+      file.done = true;
+      file.partPath = null;
+      _events.add(FileReceived(session.id, header.name, file.destination!.path));
+    });
+    await _empty(request, 200);
+    _endSessionIfFinished(session);
   }
 
   /// Reads and discards the body, for the speed test. Nothing touches disk.

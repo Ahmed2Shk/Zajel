@@ -44,4 +44,5 @@ hashing all share one thread. These numbers measure the cost of the Dart code, n
 - Parallel connections may help on real Wi-Fi even though they did not help on loopback. The speed-test
   screen sends one stream, so compare `UploadOptions(parallel: 1)` and `parallel: 4` with real transfers of a
   1 GB file on two phones before choosing the default.
-- Many small files as one tar stream (a Phase 2 item) is not implemented yet.
+- Many small files as one tar request is implemented and tested on loopback, but its speed-up on real
+  Wi-Fi has not been measured.

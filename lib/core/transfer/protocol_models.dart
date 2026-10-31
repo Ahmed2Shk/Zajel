@@ -18,6 +18,10 @@ const zajelExtensionHeader = 'x-zajel-extension';
 const zajelExtensionVersion = '1';
 /// A Zajel receiver with a native data path tells the sender where to send chunks.
 const zajelDataPortHeader = 'x-zajel-data-port';
+/// Small files travel as one tar archive; the receiver names the upload token.
+const zajelTarTokenHeader = 'x-zajel-tar-token';
+const zajelTarRoute = '$localSendApiPrefix/zajel/tar';
+const zajelTarStatusRoute = '$localSendApiPrefix/zajel/tar-status';
 const zajelProgressRoute = '$localSendApiPrefix/zajel/progress';
 const zajelBenchmarkRoute = '$localSendApiPrefix/zajel/benchmark';
 
