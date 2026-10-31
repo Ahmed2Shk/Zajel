@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -100,6 +101,9 @@ void main() {
         'google_mobile_ads',
         'admob',
         'sentry',
+        'mlkit',
+        'ml_kit',
+        'mobile_scanner',
         'crashlytics',
         'mixpanel',
         'amplitude',
@@ -132,6 +136,48 @@ void main() {
       final gradle = File('android/app/build.gradle.kts').readAsStringSync();
       expect(gradle.toLowerCase(), isNot(contains('firebase')));
       expect(gradle.toLowerCase(), isNot(contains('google-services')));
+    });
+  });
+
+  group('plugins pull in no telemetry', () {
+    test('no plugin depends on Google ML Kit, Firebase or data-transport libraries', () {
+      // Plugins carry their own Android dependencies, which pubspec.yaml does
+      // not show. A scanner built on ML Kit, for example, brings code that
+      // reports usage to Google.
+      final config = File('.dart_tool/package_config.json');
+      if (!config.existsSync()) {
+        markTestSkipped('run flutter pub get first');
+        return;
+      }
+      final packages = (jsonDecode(config.readAsStringSync()) as Map)['packages'] as List;
+      const banned = [
+        'com.google.mlkit',
+        'com.google.android.gms:play-services-mlkit',
+        'com.google.firebase',
+        'com.google.android.datatransport',
+        'play-services-analytics',
+        'play-services-ads',
+        'crashlytics',
+        'com.facebook.android',
+        'sentry',
+      ];
+      final offenders = <String>[];
+      for (final entry in packages) {
+        final map = entry as Map;
+        final root = Uri.parse(map['rootUri'] as String);
+        final dir = root.isAbsolute
+            ? Directory.fromUri(root)
+            : Directory.fromUri(config.parent.uri.resolveUri(root));
+        for (final name in ['build.gradle', 'build.gradle.kts']) {
+          final gradle = File('${dir.path}/android/$name');
+          if (!gradle.existsSync()) continue;
+          final text = gradle.readAsStringSync();
+          for (final b in banned) {
+            if (text.contains(b)) offenders.add('${map['name']}: $b');
+          }
+        }
+      }
+      expect(offenders, isEmpty, reason: 'telemetry libraries: $offenders');
     });
   });
 

@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/transfer/transfer_providers.dart';
@@ -111,6 +113,9 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   }
 }
 
+/// The camera, using ZXing on the device. (The usual Google ML Kit scanner is
+/// avoided on purpose: it ships telemetry code that talks to Google, which an
+/// offline app with no analytics must not contain.)
 class _CameraScanner extends StatefulWidget {
   const _CameraScanner({required this.onCode});
 
@@ -121,50 +126,67 @@ class _CameraScanner extends StatefulWidget {
 }
 
 class _CameraScannerState extends State<_CameraScanner> {
-  final _controller = MobileScannerController(formats: const [BarcodeFormat.qrCode]);
+  final _viewKey = GlobalKey(debugLabel: 'zajel-qr-view');
+  QRViewController? _controller;
+  StreamSubscription<Barcode>? _subscription;
+  bool _denied = false;
+
+  void _onCreated(QRViewController controller) {
+    _controller = controller;
+    _subscription = controller.scannedDataStream.listen((barcode) {
+      final value = barcode.code;
+      if (value != null) widget.onCode(value);
+    });
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _subscription?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return MobileScanner(
-      controller: _controller,
-      onDetect: (capture) {
-        for (final barcode in capture.barcodes) {
-          final value = barcode.rawValue;
-          if (value != null) widget.onCode(value);
-        }
-      },
-      errorBuilder: (context, error) {
-        final denied = error.errorCode == MobileScannerErrorCode.permissionDenied;
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.no_photography_outlined, size: 56),
-                const SizedBox(height: 16),
-                Text(
-                  denied ? l10n.cameraDenied : l10n.tfFailed,
-                  textAlign: TextAlign.center,
+    return Stack(
+      children: [
+        QRView(
+          key: _viewKey,
+          onQRViewCreated: _onCreated,
+          formatsAllowed: const [BarcodeFormat.qrcode],
+          onPermissionSet: (_, granted) {
+            if (mounted) setState(() => _denied = !granted);
+          },
+        ),
+        if (_denied)
+          Positioned.fill(
+            child: ColoredBox(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.no_photography_outlined, size: 56),
+                      const SizedBox(height: 16),
+                      Text(l10n.cameraDenied, textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      // After allowing access in the system dialog or settings.
+                      FilledButton(
+                        onPressed: () {
+                          setState(() => _denied = false);
+                          _controller?.resumeCamera();
+                        },
+                        child: Text(l10n.retry),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                // After allowing access in the system dialog or settings.
-                FilledButton(
-                  onPressed: () => _controller.start(),
-                  child: Text(l10n.retry),
-                ),
-              ],
+              ),
             ),
           ),
-        );
-      },
+      ],
     );
   }
 }
