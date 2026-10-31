@@ -232,12 +232,67 @@ data class NativeDeviceInfo (
     return result
   }
 }
+
+/**
+ * An installed app that can be sent as an APK.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class NativeAppInfo (
+  val name: String,
+  val packageName: String,
+  val apkPath: String,
+  val size: Long
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): NativeAppInfo {
+      val name = pigeonVar_list[0] as String
+      val packageName = pigeonVar_list[1] as String
+      val apkPath = pigeonVar_list[2] as String
+      val size = pigeonVar_list[3] as Long
+      return NativeAppInfo(name, packageName, apkPath, size)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      name,
+      packageName,
+      apkPath,
+      size,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as NativeAppInfo
+    return PlatformApiPigeonUtils.deepEquals(this.name, other.name) && PlatformApiPigeonUtils.deepEquals(this.packageName, other.packageName) && PlatformApiPigeonUtils.deepEquals(this.apkPath, other.apkPath) && PlatformApiPigeonUtils.deepEquals(this.size, other.size)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.name)
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.packageName)
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.apkPath)
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.size)
+    return result
+  }
+}
 private open class PlatformApiPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
       129.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           NativeDeviceInfo.fromList(it)
+        }
+      }
+      130.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          NativeAppInfo.fromList(it)
         }
       }
       else -> super.readValueOfType(type, buffer)
@@ -247,6 +302,10 @@ private open class PlatformApiPigeonCodec : StandardMessageCodec() {
     when (value) {
       is NativeDeviceInfo -> {
         stream.write(129)
+        writeValue(stream, value.toList())
+      }
+      is NativeAppInfo -> {
+        stream.write(130)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -276,6 +335,11 @@ interface PlatformApi {
   fun requestNotificationPermission()
   /** CPU time this process has used so far, in milliseconds. */
   fun getProcessCpuTimeMs(): Long
+  /**
+   * Apps with a launcher icon, so they can be sent as APK files. Only the
+   * base APK is listed; split APKs are not supported.
+   */
+  fun listInstalledApps(): List<NativeAppInfo>
 
   companion object {
     /** The codec used by PlatformApi. */
@@ -376,6 +440,21 @@ interface PlatformApi {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
               listOf(api.getProcessCpuTimeMs())
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.PlatformApi.listInstalledApps$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.listInstalledApps())
             } catch (exception: Throwable) {
               PlatformApiPigeonUtils.wrapError(exception)
             }

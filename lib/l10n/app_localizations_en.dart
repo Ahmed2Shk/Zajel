@@ -174,6 +174,116 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get homeReadyTitle => 'Ready to send and receive';
+
+  @override
+  String get homeReadySubtitle => 'Direct local network • no internet or ads';
+
+  @override
+  String get sendSubtitle => 'Photos, videos, documents and apps at high speed';
+
+  @override
+  String get receiveSubtitle =>
+      'Receive files from nearby devices, no internet';
+
+  @override
+  String get directLink => 'Direct link';
+
+  @override
+  String get directLinkSub => 'Share through a browser';
+
+  @override
+  String get qrTile => 'QR code';
+
+  @override
+  String get qrTileSub => 'Quick connect';
+
+  @override
+  String get historyClear => 'Clear';
+
+  @override
+  String get directionSent => 'Sent';
+
+  @override
+  String get directionReceived => 'Received';
+
+  @override
+  String get pickPhotos => 'Choose photos';
+
+  @override
+  String get pickVideos => 'Choose videos';
+
+  @override
+  String get appsLoading => 'Loading apps…';
+
+  @override
+  String get appsNone => 'No apps found';
+
+  @override
+  String get appsUnsupported => 'Choosing apps is available on Android only';
+
+  @override
+  String selectedItems(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String readyToSendSize(String size) {
+    return 'Ready to send • $size';
+  }
+
+  @override
+  String get clearSelection => 'Clear selection';
+
+  @override
+  String get searchingNearby => 'Looking for nearby devices…';
+
+  @override
+  String foundCount(int count) {
+    return '$count found';
+  }
+
+  @override
+  String get discoveryTip =>
+      'Make sure Zajel is open on the other device, or stay on this screen for an instant connection without internet.';
+
+  @override
+  String get etaLabel => 'Time left';
+
+  @override
+  String get transferredSoFar => 'Transferred so far';
+
+  @override
+  String get overallProgress => 'Overall progress';
+
+  @override
+  String fileListTitle(int count) {
+    return 'Files ($count)';
+  }
+
+  @override
+  String get fileDone => 'Transferred';
+
+  @override
+  String get fileWaiting => 'Waiting';
+
+  @override
+  String get fileSending => 'Sending';
+
+  @override
+  String etaSeconds(int s) {
+    return '$s s';
+  }
+
+  @override
+  String etaMinutes(int m, int s) {
+    return '$m min $s s';
+  }
+
+  @override
+  String get connectedTo => 'Connected to';
+
+  @override
   String get webShareTitle => 'Share through a browser';
 
   @override

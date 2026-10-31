@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/history/history_store.dart';
 import 'features/receive/incoming_transfer_host.dart';
 import 'features/settings/app_settings.dart';
 import 'l10n/l10n.dart';
@@ -14,6 +15,7 @@ class ZajelApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
+    ref.watch(historyRecorderProvider); // records received files
 
     return MaterialApp.router(
       onGenerateTitle: (context) => context.l10n.appName,

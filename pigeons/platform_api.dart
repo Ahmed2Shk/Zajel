@@ -12,6 +12,21 @@ class NativeDeviceInfo {
   String model;
   int sdkInt;
 }
+/// An installed app that can be sent as an APK.
+class NativeAppInfo {
+  NativeAppInfo({
+    required this.name,
+    required this.packageName,
+    required this.apkPath,
+    required this.size,
+  });
+
+  String name;
+  String packageName;
+  String apkPath;
+  int size;
+}
+
 @HostApi()
 abstract class PlatformApi {
   NativeDeviceInfo getDeviceInfo();
@@ -29,6 +44,10 @@ abstract class PlatformApi {
   void requestNotificationPermission();
   /// CPU time this process has used so far, in milliseconds.
   int getProcessCpuTimeMs();
+
+  /// Apps with a launcher icon, so they can be sent as APK files. Only the
+  /// base APK is listed; split APKs are not supported.
+  List<NativeAppInfo> listInstalledApps();
 }
 /// The Android data path. A TLS server written in Kotlin receives file chunks
 /// straight from the socket onto the disk with `FileChannel`, so file bytes

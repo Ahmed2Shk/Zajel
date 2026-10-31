@@ -410,6 +410,198 @@ abstract class AppLocalizations {
   /// **'الإرسال إلى {name}'**
   String sendingTo(String name);
 
+  /// No description provided for @homeReadyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاهز للإرسال والاستقبال'**
+  String get homeReadyTitle;
+
+  /// No description provided for @homeReadySubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شبكة محلية مباشرة • بدون إنترنت أو إعلانات'**
+  String get homeReadySubtitle;
+
+  /// No description provided for @sendSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'صور، فيديو، مستندات وتطبيقات بسرعة عالية'**
+  String get sendSubtitle;
+
+  /// No description provided for @receiveSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'استقبال الملفات من الأجهزة القريبة بدون إنترنت'**
+  String get receiveSubtitle;
+
+  /// No description provided for @directLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'رابط مباشر'**
+  String get directLink;
+
+  /// No description provided for @directLinkSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة عبر المتصفح'**
+  String get directLinkSub;
+
+  /// No description provided for @qrTile.
+  ///
+  /// In ar, this message translates to:
+  /// **'رمز QR'**
+  String get qrTile;
+
+  /// No description provided for @qrTileSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصال سريع'**
+  String get qrTileSub;
+
+  /// No description provided for @historyClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح'**
+  String get historyClear;
+
+  /// No description provided for @directionSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُرسل'**
+  String get directionSent;
+
+  /// No description provided for @directionReceived.
+  ///
+  /// In ar, this message translates to:
+  /// **'استُلم'**
+  String get directionReceived;
+
+  /// No description provided for @pickPhotos.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار صور'**
+  String get pickPhotos;
+
+  /// No description provided for @pickVideos.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار فيديو'**
+  String get pickVideos;
+
+  /// No description provided for @appsLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري تحميل التطبيقات…'**
+  String get appsLoading;
+
+  /// No description provided for @appsNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد تطبيقات'**
+  String get appsNone;
+
+  /// No description provided for @appsUnsupported.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار التطبيقات متاح على أندرويد فقط'**
+  String get appsUnsupported;
+
+  /// No description provided for @selectedItems.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} عناصر محددة'**
+  String selectedItems(int count);
+
+  /// No description provided for @readyToSendSize.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاهز للإرسال • {size}'**
+  String readyToSendSize(String size);
+
+  /// No description provided for @clearSelection.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء التحديد'**
+  String get clearSelection;
+
+  /// No description provided for @searchingNearby.
+  ///
+  /// In ar, this message translates to:
+  /// **'البحث عن أجهزة مجاورة…'**
+  String get searchingNearby;
+
+  /// No description provided for @foundCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم العثور على {count}'**
+  String foundCount(int count);
+
+  /// No description provided for @discoveryTip.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكد من فتح زاجل على الجهاز الآخر، أو أبقِ على هذه الشاشة للاتصال الفوري بدون إنترنت.'**
+  String get discoveryTip;
+
+  /// No description provided for @etaLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت المتبقي'**
+  String get etaLabel;
+
+  /// No description provided for @transferredSoFar.
+  ///
+  /// In ar, this message translates to:
+  /// **'المنقول حتى الآن'**
+  String get transferredSoFar;
+
+  /// No description provided for @overallProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقدم الإجمالي'**
+  String get overallProgress;
+
+  /// No description provided for @fileListTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة الملفات ({count})'**
+  String fileListTitle(int count);
+
+  /// No description provided for @fileDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم النقل بنجاح'**
+  String get fileDone;
+
+  /// No description provided for @fileWaiting.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيد الانتظار'**
+  String get fileWaiting;
+
+  /// No description provided for @fileSending.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري الإرسال'**
+  String get fileSending;
+
+  /// No description provided for @etaSeconds.
+  ///
+  /// In ar, this message translates to:
+  /// **'{s} ث'**
+  String etaSeconds(int s);
+
+  /// No description provided for @etaMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{m} د {s} ث'**
+  String etaMinutes(int m, int s);
+
+  /// No description provided for @connectedTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'متصل مع الجهاز'**
+  String get connectedTo;
+
   /// No description provided for @webShareTitle.
   ///
   /// In ar, this message translates to:

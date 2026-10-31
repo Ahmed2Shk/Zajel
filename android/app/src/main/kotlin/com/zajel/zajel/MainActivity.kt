@@ -12,6 +12,7 @@ import android.os.Looper
 import android.os.Process
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.io.File
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 
@@ -95,6 +96,29 @@ private class PlatformApiImpl(
     }
 
     override fun getProcessCpuTimeMs(): Long = Process.getElapsedCpuTime()
+
+    @Suppress("DEPRECATION")
+    override fun listInstalledApps(): List<NativeAppInfo> {
+        val pm = context.packageManager
+        val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        return pm.queryIntentActivities(launcher, 0)
+            .mapNotNull { resolved ->
+                val app = resolved.activityInfo.applicationInfo
+                val apk = File(app.sourceDir)
+                if (!apk.canRead()) {
+                    null
+                } else {
+                    NativeAppInfo(
+                        name = pm.getApplicationLabel(app).toString(),
+                        packageName = app.packageName,
+                        apkPath = app.sourceDir,
+                        size = apk.length(),
+                    )
+                }
+            }
+            .distinctBy { it.packageName }
+            .sortedBy { it.name.lowercase() }
+    }
 
     override fun setMulticastLock(enabled: Boolean) {
         if (enabled) {

@@ -86,6 +86,83 @@
       }
     }
   },
+  "homeReadyTitle": "جاهز للإرسال والاستقبال",
+  "homeReadySubtitle": "شبكة محلية مباشرة • بدون إنترنت أو إعلانات",
+  "sendSubtitle": "صور، فيديو، مستندات وتطبيقات بسرعة عالية",
+  "receiveSubtitle": "استقبال الملفات من الأجهزة القريبة بدون إنترنت",
+  "directLink": "رابط مباشر",
+  "directLinkSub": "مشاركة عبر المتصفح",
+  "qrTile": "رمز QR",
+  "qrTileSub": "اتصال سريع",
+  "historyClear": "مسح",
+  "directionSent": "أُرسل",
+  "directionReceived": "استُلم",
+  "pickPhotos": "اختيار صور",
+  "pickVideos": "اختيار فيديو",
+  "appsLoading": "جاري تحميل التطبيقات…",
+  "appsNone": "لا توجد تطبيقات",
+  "appsUnsupported": "اختيار التطبيقات متاح على أندرويد فقط",
+  "selectedItems": "{count} عناصر محددة",
+  "readyToSendSize": "جاهز للإرسال • {size}",
+  "clearSelection": "إلغاء التحديد",
+  "searchingNearby": "البحث عن أجهزة مجاورة…",
+  "foundCount": "تم العثور على {count}",
+  "discoveryTip": "تأكد من فتح زاجل على الجهاز الآخر، أو أبقِ على هذه الشاشة للاتصال الفوري بدون إنترنت.",
+  "etaLabel": "الوقت المتبقي",
+  "transferredSoFar": "المنقول حتى الآن",
+  "overallProgress": "التقدم الإجمالي",
+  "fileListTitle": "قائمة الملفات ({count})",
+  "fileDone": "تم النقل بنجاح",
+  "fileWaiting": "قيد الانتظار",
+  "fileSending": "جاري الإرسال",
+  "etaSeconds": "{s} ث",
+  "etaMinutes": "{m} د {s} ث",
+  "connectedTo": "متصل مع الجهاز",
+  "@selectedItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@readyToSendSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "@foundCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@fileListTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@etaSeconds": {
+    "placeholders": {
+      "s": {
+        "type": "int"
+      }
+    }
+  },
+  "@etaMinutes": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      },
+      "s": {
+        "type": "int"
+      }
+    }
+  },
   "webShareTitle": "المشاركة عبر المتصفح",
   "webShareIntro": "لأي جهاز بدون زاجل: امسح الرمز أو افتح الرابط من متصفحه على نفس الشبكة. يمكنه تنزيل الملفات المختارة وإرسال ملفات إلى هذا الجهاز.",
   "webShareWarning": "هذه الصفحة غير مشفّرة (HTTP). استخدمها فقط على شبكة تثق بها، ولا ترسل ملفات حساسة.",

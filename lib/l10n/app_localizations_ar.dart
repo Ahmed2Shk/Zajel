@@ -174,6 +174,116 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get homeReadyTitle => 'جاهز للإرسال والاستقبال';
+
+  @override
+  String get homeReadySubtitle => 'شبكة محلية مباشرة • بدون إنترنت أو إعلانات';
+
+  @override
+  String get sendSubtitle => 'صور، فيديو، مستندات وتطبيقات بسرعة عالية';
+
+  @override
+  String get receiveSubtitle =>
+      'استقبال الملفات من الأجهزة القريبة بدون إنترنت';
+
+  @override
+  String get directLink => 'رابط مباشر';
+
+  @override
+  String get directLinkSub => 'مشاركة عبر المتصفح';
+
+  @override
+  String get qrTile => 'رمز QR';
+
+  @override
+  String get qrTileSub => 'اتصال سريع';
+
+  @override
+  String get historyClear => 'مسح';
+
+  @override
+  String get directionSent => 'أُرسل';
+
+  @override
+  String get directionReceived => 'استُلم';
+
+  @override
+  String get pickPhotos => 'اختيار صور';
+
+  @override
+  String get pickVideos => 'اختيار فيديو';
+
+  @override
+  String get appsLoading => 'جاري تحميل التطبيقات…';
+
+  @override
+  String get appsNone => 'لا توجد تطبيقات';
+
+  @override
+  String get appsUnsupported => 'اختيار التطبيقات متاح على أندرويد فقط';
+
+  @override
+  String selectedItems(int count) {
+    return '$count عناصر محددة';
+  }
+
+  @override
+  String readyToSendSize(String size) {
+    return 'جاهز للإرسال • $size';
+  }
+
+  @override
+  String get clearSelection => 'إلغاء التحديد';
+
+  @override
+  String get searchingNearby => 'البحث عن أجهزة مجاورة…';
+
+  @override
+  String foundCount(int count) {
+    return 'تم العثور على $count';
+  }
+
+  @override
+  String get discoveryTip =>
+      'تأكد من فتح زاجل على الجهاز الآخر، أو أبقِ على هذه الشاشة للاتصال الفوري بدون إنترنت.';
+
+  @override
+  String get etaLabel => 'الوقت المتبقي';
+
+  @override
+  String get transferredSoFar => 'المنقول حتى الآن';
+
+  @override
+  String get overallProgress => 'التقدم الإجمالي';
+
+  @override
+  String fileListTitle(int count) {
+    return 'قائمة الملفات ($count)';
+  }
+
+  @override
+  String get fileDone => 'تم النقل بنجاح';
+
+  @override
+  String get fileWaiting => 'قيد الانتظار';
+
+  @override
+  String get fileSending => 'جاري الإرسال';
+
+  @override
+  String etaSeconds(int s) {
+    return '$s ث';
+  }
+
+  @override
+  String etaMinutes(int m, int s) {
+    return '$m د $s ث';
+  }
+
+  @override
+  String get connectedTo => 'متصل مع الجهاز';
+
+  @override
   String get webShareTitle => 'المشاركة عبر المتصفح';
 
   @override

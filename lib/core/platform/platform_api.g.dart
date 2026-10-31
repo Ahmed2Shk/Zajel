@@ -152,6 +152,62 @@ class NativeDeviceInfo {
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
 
+/// An installed app that can be sent as an APK.
+class NativeAppInfo {
+  NativeAppInfo({
+    required this.name,
+    required this.packageName,
+    required this.apkPath,
+    required this.size,
+  });
+
+  String name;
+
+  String packageName;
+
+  String apkPath;
+
+  int size;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      name,
+      packageName,
+      apkPath,
+      size,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static NativeAppInfo decode(Object result) {
+    result as List<Object?>;
+    return NativeAppInfo(
+      name: result[0]! as String,
+      packageName: result[1]! as String,
+      apkPath: result[2]! as String,
+      size: result[3]! as int,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! NativeAppInfo || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(name, other.name) && _deepEquals(packageName, other.packageName) && _deepEquals(apkPath, other.apkPath) && _deepEquals(size, other.size);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -163,6 +219,9 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is NativeDeviceInfo) {
       buffer.putUint8(129);
       writeValue(buffer, value.encode());
+    }    else if (value is NativeAppInfo) {
+      buffer.putUint8(130);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -173,6 +232,8 @@ class _PigeonCodec extends StandardMessageCodec {
     switch (type) {
       case 129:
         return NativeDeviceInfo.decode(readValue(buffer)!);
+      case 130:
+        return NativeAppInfo.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -308,6 +369,27 @@ class PlatformApi {
     )
     ;
     return pigeonVar_replyValue! as int;
+  }
+
+  /// Apps with a launcher icon, so they can be sent as APK files. Only the
+  /// base APK is listed; split APKs are not supported.
+  Future<List<NativeAppInfo>> listInstalledApps() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.PlatformApi.listInstalledApps$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return (pigeonVar_replyValue! as List<Object?>).cast<NativeAppInfo>();
   }
 }
 

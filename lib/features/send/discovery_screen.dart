@@ -4,17 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/discovery/multicast_discovery.dart';
 import '../../core/router/app_router.dart';
-import '../../core/transfer/protocol_models.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/transfer/transfer_providers.dart';
+import '../../core/widgets/zajel_widgets.dart';
 import '../../l10n/l10n.dart';
-
-IconData _iconFor(DeviceType type) => switch (type) {
-  DeviceType.mobile => Icons.smartphone,
-  DeviceType.desktop => Icons.computer,
-  DeviceType.web => Icons.language,
-  DeviceType.headless => Icons.terminal,
-  DeviceType.server => Icons.dns,
-};
+import 'radar_view.dart';
 
 class DiscoveryScreen extends ConsumerWidget {
   const DiscoveryScreen({super.key});
@@ -34,89 +28,98 @@ class DiscoveryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final devices = ref.watch(nearbyDevicesProvider).value ?? const [];
     final service = ref.watch(localSendServiceProvider).value;
+    final selfName = service?.device.alias ?? l10n.appName;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.discoveryTitle)),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (service != null)
-                Text(
-                  l10n.readyToReceive(service.device.alias),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: devices.isEmpty
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+              ZajelCard(
+                child: Row(
+                  children: [
+                    Icon(Icons.circle, size: 12, color: context.zajelColors.success),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const CircularProgressIndicator(),
-                          const SizedBox(height: 24),
                           Text(
-                            l10n.searchingDevices,
-                            textAlign: TextAlign.center,
+                            devices.isEmpty ? l10n.searchingNearby : l10n.foundCount(devices.length),
+                            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                           ),
-                          const SizedBox(height: 8),
                           Text(
-                            l10n.noDevicesFound,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall,
+                            l10n.readyToReceive(selfName),
+                            style: theme.textTheme.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
-                      )
-                    : ListView.separated(
-                        itemCount: devices.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final device = devices[index];
-                          return Card(
-                            child: ListTile(
-                              leading: Icon(_iconFor(device.info.deviceType)),
-                              title: Text(device.info.alias),
-                              subtitle: Text(
-                                [
-                                  if (device.info.deviceModel != null)
-                                    device.info.deviceModel!,
-                                  device.address.address,
-                                ].join(' · '),
-                              ),
-                              onTap: () => _send(context, ref, device),
-                            ),
-                          );
-                        },
                       ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.refresh, color: scheme.primary),
+                      tooltip: l10n.searchAgain,
+                      onPressed: service?.rescan,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              TextButton.icon(
-                icon: const Icon(Icons.refresh),
-                label: Text(l10n.searchAgain),
-                onPressed: service?.rescan,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: RadarView(
+                    selfName: selfName,
+                    devices: devices,
+                    onSelect: (device) => _send(context, ref, device),
+                  ),
+                ),
               ),
-TextButton.icon(                icon: const Icon(Icons.public),                label: Text(l10n.webShareTitle),                onPressed: () => context.push(AppRoutes.webShare),              ),
-              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => context.push(AppRoutes.qrShow),
-                      child: Text(l10n.showQr),
+                    child: FilledButton.tonalIcon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: scheme.secondary.withValues(alpha: 0.18),
+                        foregroundColor: scheme.secondary,
+                      ),
+                      icon: const Icon(Icons.qr_code_scanner),
+                      label: Text(l10n.scanQr),
+                      onPressed: () => context.push(AppRoutes.qrScan),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => context.push(AppRoutes.qrScan),
-                      child: Text(l10n.scanQr),
+                    child: FilledButton.tonalIcon(
+                      icon: const Icon(Icons.qr_code_2),
+                      label: Text(l10n.showQr),
+                      onPressed: () => context.push(AppRoutes.qrShow),
                     ),
                   ),
                 ],
+              ),
+              TextButton.icon(
+                icon: const Icon(Icons.public),
+                label: Text(l10n.webShareTitle),
+                onPressed: () => context.push(AppRoutes.webShare),
+              ),
+              ZajelCard(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline, color: scheme.secondary),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(l10n.discoveryTip, style: theme.textTheme.bodySmall)),
+                  ],
+                ),
               ),
             ],
           ),
