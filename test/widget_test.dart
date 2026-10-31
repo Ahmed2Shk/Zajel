@@ -70,6 +70,7 @@ void main() {
       AppRoutes.done,
       AppRoutes.settings,
       AppRoutes.benchmark,
+      AppRoutes.webShare,
     ]) {
       router.go(route);
       // The discovery screen shows a spinner forever, so it never "settles".

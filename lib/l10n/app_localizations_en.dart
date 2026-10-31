@@ -174,6 +174,73 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get webShareTitle => 'Share through a browser';
+
+  @override
+  String get webShareIntro =>
+      'For any device without Zajel: scan the code or open the link in its browser on the same network. It can download the files you chose and send files to this device.';
+
+  @override
+  String get webShareWarning =>
+      'This page is not encrypted (HTTP). Use it only on a network you trust, and do not send sensitive files.';
+
+  @override
+  String get webShareStart => 'Start sharing';
+
+  @override
+  String get webShareStop => 'Stop sharing';
+
+  @override
+  String get webShareRunning =>
+      'Sharing is on. Anyone on the network with this link can open the page.';
+
+  @override
+  String webShareFiles(int count) {
+    return 'Files available to download: $count';
+  }
+
+  @override
+  String get webPageTitle => 'Zajel';
+
+  @override
+  String get webPageWarning =>
+      'This page is not encrypted. Use it on a network you trust only.';
+
+  @override
+  String get webPageDownloads => 'Download from this device';
+
+  @override
+  String get webPageUploads => 'Send to this device';
+
+  @override
+  String get webPageChoose => 'Choose files';
+
+  @override
+  String get webPageSend => 'Send';
+
+  @override
+  String get webPageWaiting => 'Waiting for the other device to accept…';
+
+  @override
+  String get webPageDone => 'Sent';
+
+  @override
+  String get webPageDeclined => 'The other device declined the request';
+
+  @override
+  String get webPageBusy =>
+      'The device is busy with another transfer, try again shortly';
+
+  @override
+  String get webPageFailed => 'Sending failed';
+
+  @override
+  String get webPagePin => 'Enter PIN';
+
+  @override
+  String get webPageNoFiles => 'No files to download';
+
+  @override
   String get defaultValue => 'Default';
 
   @override

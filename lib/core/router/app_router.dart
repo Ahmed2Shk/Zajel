@@ -9,6 +9,7 @@ import '../../features/send/discovery_screen.dart';
 import '../../features/send/done_screen.dart';
 import '../../features/send/file_picker_screen.dart';
 import '../../features/send/transfer_progress_screen.dart';
+import '../../features/send/web_share_screen.dart';
 import '../../features/settings/benchmark_screen.dart';
 import '../../features/settings/settings_screen.dart';
 
@@ -22,6 +23,7 @@ abstract final class AppRoutes {
   static const done = '/done';
   static const settings = '/settings';
   static const benchmark = '/benchmark';
+  static const webShare = '/web-share';
 }
 
 /// Lets code outside the widget tree (incoming-transfer dialogs) reach the
@@ -51,6 +53,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.settings,
         builder: (_, _) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.webShare,
+        builder: (_, _) => const WebShareScreen(),
       ),
       GoRoute(
         path: AppRoutes.benchmark,

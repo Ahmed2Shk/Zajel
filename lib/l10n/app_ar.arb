@@ -86,6 +86,33 @@
       }
     }
   },
+  "webShareTitle": "المشاركة عبر المتصفح",
+  "webShareIntro": "لأي جهاز بدون زاجل: امسح الرمز أو افتح الرابط من متصفحه على نفس الشبكة. يمكنه تنزيل الملفات المختارة وإرسال ملفات إلى هذا الجهاز.",
+  "webShareWarning": "هذه الصفحة غير مشفّرة (HTTP). استخدمها فقط على شبكة تثق بها، ولا ترسل ملفات حساسة.",
+  "webShareStart": "تشغيل المشاركة",
+  "webShareStop": "إيقاف المشاركة",
+  "webShareRunning": "المشاركة تعمل. أي شخص يملك هذا الرابط على الشبكة يستطيع فتح الصفحة.",
+  "webShareFiles": "ملفات متاحة للتنزيل: {count}",
+  "@webShareFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "webPageTitle": "زاجل",
+  "webPageWarning": "هذه الصفحة غير مشفّرة. استخدمها على شبكة تثق بها فقط.",
+  "webPageDownloads": "تنزيل من هذا الجهاز",
+  "webPageUploads": "إرسال إلى هذا الجهاز",
+  "webPageChoose": "اختر ملفات",
+  "webPageSend": "إرسال",
+  "webPageWaiting": "بانتظار موافقة الجهاز الآخر…",
+  "webPageDone": "تم الإرسال",
+  "webPageDeclined": "رفض الجهاز الآخر الطلب",
+  "webPageBusy": "الجهاز مشغول بنقل آخر، حاول بعد قليل",
+  "webPageFailed": "فشل الإرسال",
+  "webPagePin": "أدخل رمز PIN",
+  "webPageNoFiles": "لا توجد ملفات للتنزيل",
   "defaultValue": "الافتراضي",
   "editDeviceName": "تعديل اسم الجهاز",
   "save": "حفظ",

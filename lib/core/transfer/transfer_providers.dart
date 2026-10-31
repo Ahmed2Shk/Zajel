@@ -14,6 +14,7 @@ import '../security/device_identity.dart';
 import 'localsend_service.dart';
 import 'protocol_models.dart';
 import 'send_client.dart';
+import 'web_share_page.dart';
 
 /// The running LocalSend service, or null on platforms without dart:io sockets
 /// (the browser build).
@@ -257,4 +258,47 @@ class SendJobNotifier extends Notifier<SendJob> {
 
 final sendJobProvider = NotifierProvider<SendJobNotifier, SendJob>(
   SendJobNotifier.new,
+);
+
+/// The browser share, or null while it is off.
+class WebShareNotifier extends Notifier<WebShareStatus?> {
+  @override
+  WebShareStatus? build() => null;
+
+  Future<void> start() async {
+    final service = await ref.read(localSendServiceProvider.future);
+    if (service == null) return;
+    final settings = ref.read(appSettingsProvider);
+    final l10n = lookupAppLocalizations(settings.locale);
+    final status = await service.startWebShare(
+      files: ref.read(selectedFilesProvider),
+      rtl: settings.locale.languageCode == 'ar',
+      strings: WebPageStrings(
+        title: l10n.webPageTitle,
+        warning: l10n.webPageWarning,
+        downloads: l10n.webPageDownloads,
+        uploads: l10n.webPageUploads,
+        choose: l10n.webPageChoose,
+        send: l10n.webPageSend,
+        waiting: l10n.webPageWaiting,
+        done: l10n.webPageDone,
+        declined: l10n.webPageDeclined,
+        busy: l10n.webPageBusy,
+        failed: l10n.webPageFailed,
+        pin: l10n.webPagePin,
+        noFiles: l10n.webPageNoFiles,
+      ),
+    );
+    state = status;
+  }
+
+  Future<void> stop() async {
+    final service = ref.read(localSendServiceProvider).value;
+    await service?.stopWebShare();
+    state = null;
+  }
+}
+
+final webShareProvider = NotifierProvider<WebShareNotifier, WebShareStatus?>(
+  WebShareNotifier.new,
 );

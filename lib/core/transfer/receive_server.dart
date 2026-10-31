@@ -212,6 +212,10 @@ class ReceiveServer {
     _dataPort = null;
   }
 
+  /// Handles one request. The server calls this for its own socket; the web
+  /// share server calls it for the upload routes it forwards.
+  Future<void> handleRequest(HttpRequest request) => _handle(request);
+
   Future<void> _handle(HttpRequest request) async {
     try {
       final path = request.uri.path;

@@ -8,6 +8,8 @@ import '../security/device_identity.dart';
 import 'protocol_models.dart';
 import 'receive_server.dart';
 import 'send_client.dart';
+import 'web_share_page.dart';
+import 'web_share_server.dart';
 
 /// An incoming transfer waiting for the user to accept or decline it.
 class PendingIncoming {
@@ -58,6 +60,8 @@ class LocalSendService {
 
   var _activeTransfers = 0;
   var _askedForNotifications = false;
+  WebShareServer? _webShare;
+  ReceiveServer? _webReceiver;
   StreamSubscription<ReceiveEvent>? _eventsSub;
 
   final _incoming = StreamController<PendingIncoming>.broadcast();
@@ -162,10 +166,58 @@ class LocalSendService {
     }
   }
 
+  /// Starts the browser share (plain HTTP, token in the link). Uploads from the
+  /// browser go through the same accept dialog as any other incoming transfer.
+  Future<WebShareStatus> startWebShare({
+    required List<SendFile> files,
+    required WebPageStrings strings,
+    required bool rtl,
+  }) async {
+    await stopWebShare();
+    final receiver = ReceiveServer(
+      identity: _server.identity,
+      device: device,
+      downloadDirectory: downloadDirectory,
+      pin: _server.pin,
+      enableChunking: false, // a browser speaks stock LocalSend only
+      onIncoming: _askUser,
+    );
+    final share = WebShareServer(
+      device: device,
+      receiver: receiver,
+      strings: strings,
+      rtl: rtl,
+      files: files,
+    );
+    await share.start();
+    _webShare = share;
+    _webReceiver = receiver;
+    // The browser may download for a long time; keep the phone awake.
+    await beginTransfer();
+    final addresses = await lanAddresses();
+    return WebShareStatus(
+      url: addresses.isEmpty ? null : share.linkFor(addresses.first),
+      fileCount: files.length,
+    );
+  }
+
+  Future<void> stopWebShare() async {
+    final share = _webShare;
+    if (share == null) return;
+    _webShare = null;
+    await share.stop();
+    await _webReceiver?.stop();
+    _webReceiver = null;
+    await endTransfer();
+  }
+
+  bool get isWebSharing => _webShare != null;
+
   /// Announces again, for the "search again" action.
   void rescan() => _discovery.announce();
 
   Future<void> stop() async {
+    await stopWebShare();
     await _eventsSub?.cancel();
     await _discoverySub?.cancel();
     await _discovery.stop();
@@ -198,4 +250,13 @@ class LocalSendService {
     _devices[found.info.fingerprint] = found;
     _devicesChanged.add(devices);
   }
+}
+
+/// A running browser share: the link to open and how many files are offered.
+class WebShareStatus {
+  const WebShareStatus({required this.url, required this.fileCount});
+
+  /// Null when the device has no network address to put in a link.
+  final Uri? url;
+  final int fileCount;
 }

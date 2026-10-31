@@ -99,6 +99,7 @@ class DiscoveryScreen extends ConsumerWidget {
                 label: Text(l10n.searchAgain),
                 onPressed: service?.rescan,
               ),
+TextButton.icon(                icon: const Icon(Icons.public),                label: Text(l10n.webShareTitle),                onPressed: () => context.push(AppRoutes.webShare),              ),
               const SizedBox(height: 8),
               Row(
                 children: [

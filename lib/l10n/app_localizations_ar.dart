@@ -174,6 +174,72 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get webShareTitle => 'المشاركة عبر المتصفح';
+
+  @override
+  String get webShareIntro =>
+      'لأي جهاز بدون زاجل: امسح الرمز أو افتح الرابط من متصفحه على نفس الشبكة. يمكنه تنزيل الملفات المختارة وإرسال ملفات إلى هذا الجهاز.';
+
+  @override
+  String get webShareWarning =>
+      'هذه الصفحة غير مشفّرة (HTTP). استخدمها فقط على شبكة تثق بها، ولا ترسل ملفات حساسة.';
+
+  @override
+  String get webShareStart => 'تشغيل المشاركة';
+
+  @override
+  String get webShareStop => 'إيقاف المشاركة';
+
+  @override
+  String get webShareRunning =>
+      'المشاركة تعمل. أي شخص يملك هذا الرابط على الشبكة يستطيع فتح الصفحة.';
+
+  @override
+  String webShareFiles(int count) {
+    return 'ملفات متاحة للتنزيل: $count';
+  }
+
+  @override
+  String get webPageTitle => 'زاجل';
+
+  @override
+  String get webPageWarning =>
+      'هذه الصفحة غير مشفّرة. استخدمها على شبكة تثق بها فقط.';
+
+  @override
+  String get webPageDownloads => 'تنزيل من هذا الجهاز';
+
+  @override
+  String get webPageUploads => 'إرسال إلى هذا الجهاز';
+
+  @override
+  String get webPageChoose => 'اختر ملفات';
+
+  @override
+  String get webPageSend => 'إرسال';
+
+  @override
+  String get webPageWaiting => 'بانتظار موافقة الجهاز الآخر…';
+
+  @override
+  String get webPageDone => 'تم الإرسال';
+
+  @override
+  String get webPageDeclined => 'رفض الجهاز الآخر الطلب';
+
+  @override
+  String get webPageBusy => 'الجهاز مشغول بنقل آخر، حاول بعد قليل';
+
+  @override
+  String get webPageFailed => 'فشل الإرسال';
+
+  @override
+  String get webPagePin => 'أدخل رمز PIN';
+
+  @override
+  String get webPageNoFiles => 'لا توجد ملفات للتنزيل';
+
+  @override
   String get defaultValue => 'الافتراضي';
 
   @override

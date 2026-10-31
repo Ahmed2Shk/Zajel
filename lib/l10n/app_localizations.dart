@@ -410,6 +410,126 @@ abstract class AppLocalizations {
   /// **'الإرسال إلى {name}'**
   String sendingTo(String name);
 
+  /// No description provided for @webShareTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشاركة عبر المتصفح'**
+  String get webShareTitle;
+
+  /// No description provided for @webShareIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'لأي جهاز بدون زاجل: امسح الرمز أو افتح الرابط من متصفحه على نفس الشبكة. يمكنه تنزيل الملفات المختارة وإرسال ملفات إلى هذا الجهاز.'**
+  String get webShareIntro;
+
+  /// No description provided for @webShareWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه الصفحة غير مشفّرة (HTTP). استخدمها فقط على شبكة تثق بها، ولا ترسل ملفات حساسة.'**
+  String get webShareWarning;
+
+  /// No description provided for @webShareStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشغيل المشاركة'**
+  String get webShareStart;
+
+  /// No description provided for @webShareStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف المشاركة'**
+  String get webShareStop;
+
+  /// No description provided for @webShareRunning.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشاركة تعمل. أي شخص يملك هذا الرابط على الشبكة يستطيع فتح الصفحة.'**
+  String get webShareRunning;
+
+  /// No description provided for @webShareFiles.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملفات متاحة للتنزيل: {count}'**
+  String webShareFiles(int count);
+
+  /// No description provided for @webPageTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاجل'**
+  String get webPageTitle;
+
+  /// No description provided for @webPageWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه الصفحة غير مشفّرة. استخدمها على شبكة تثق بها فقط.'**
+  String get webPageWarning;
+
+  /// No description provided for @webPageDownloads.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنزيل من هذا الجهاز'**
+  String get webPageDownloads;
+
+  /// No description provided for @webPageUploads.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال إلى هذا الجهاز'**
+  String get webPageUploads;
+
+  /// No description provided for @webPageChoose.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر ملفات'**
+  String get webPageChoose;
+
+  /// No description provided for @webPageSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال'**
+  String get webPageSend;
+
+  /// No description provided for @webPageWaiting.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار موافقة الجهاز الآخر…'**
+  String get webPageWaiting;
+
+  /// No description provided for @webPageDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الإرسال'**
+  String get webPageDone;
+
+  /// No description provided for @webPageDeclined.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض الجهاز الآخر الطلب'**
+  String get webPageDeclined;
+
+  /// No description provided for @webPageBusy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجهاز مشغول بنقل آخر، حاول بعد قليل'**
+  String get webPageBusy;
+
+  /// No description provided for @webPageFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشل الإرسال'**
+  String get webPageFailed;
+
+  /// No description provided for @webPagePin.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل رمز PIN'**
+  String get webPagePin;
+
+  /// No description provided for @webPageNoFiles.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد ملفات للتنزيل'**
+  String get webPageNoFiles;
+
   /// No description provided for @defaultValue.
   ///
   /// In ar, this message translates to:
