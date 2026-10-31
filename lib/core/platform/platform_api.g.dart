@@ -208,6 +208,120 @@ class NativeAppInfo {
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
 
+/// Wi-Fi credentials of a hotspot or Wi-Fi Direct group this phone created.
+class NativeNetworkInfo {
+  NativeNetworkInfo({
+    required this.ssid,
+    required this.passphrase,
+  });
+
+  String ssid;
+
+  String passphrase;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      ssid,
+      passphrase,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static NativeNetworkInfo decode(Object result) {
+    result as List<Object?>;
+    return NativeNetworkInfo(
+      ssid: result[0]! as String,
+      passphrase: result[1]! as String,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! NativeNetworkInfo || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(ssid, other.ssid) && _deepEquals(passphrase, other.passphrase);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
+/// A Zajel receiver found over Wi-Fi Direct service discovery.
+class NativeDirectPeer {
+  NativeDirectPeer({
+    required this.deviceAddress,
+    required this.alias,
+    required this.fingerprint,
+    required this.port,
+    this.networkName,
+    this.passphrase,
+  });
+
+  String deviceAddress;
+
+  String alias;
+
+  String fingerprint;
+
+  int port;
+
+  /// The receiver's group credentials (Android 10+). With them a sender joins
+  /// the group without an invitation prompt on the receiver.
+  String? networkName;
+
+  String? passphrase;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      deviceAddress,
+      alias,
+      fingerprint,
+      port,
+      networkName,
+      passphrase,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static NativeDirectPeer decode(Object result) {
+    result as List<Object?>;
+    return NativeDirectPeer(
+      deviceAddress: result[0]! as String,
+      alias: result[1]! as String,
+      fingerprint: result[2]! as String,
+      port: result[3]! as int,
+      networkName: result[4] as String?,
+      passphrase: result[5] as String?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! NativeDirectPeer || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(deviceAddress, other.deviceAddress) && _deepEquals(alias, other.alias) && _deepEquals(fingerprint, other.fingerprint) && _deepEquals(port, other.port) && _deepEquals(networkName, other.networkName) && _deepEquals(passphrase, other.passphrase);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -222,6 +336,12 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is NativeAppInfo) {
       buffer.putUint8(130);
       writeValue(buffer, value.encode());
+    }    else if (value is NativeNetworkInfo) {
+      buffer.putUint8(131);
+      writeValue(buffer, value.encode());
+    }    else if (value is NativeDirectPeer) {
+      buffer.putUint8(132);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -234,6 +354,10 @@ class _PigeonCodec extends StandardMessageCodec {
         return NativeDeviceInfo.decode(readValue(buffer)!);
       case 130:
         return NativeAppInfo.decode(readValue(buffer)!);
+      case 131:
+        return NativeNetworkInfo.decode(readValue(buffer)!);
+      case 132:
+        return NativeDirectPeer.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -520,5 +644,272 @@ abstract class NativeDataCallbacks {
         });
       }
     }
+  }
+}
+
+/// Router-free transports (SPEC.md, Phase 3). Errors use the codes
+/// `permission_denied`, `location_off`, `wifi_off`, `unsupported`, `busy`,
+/// `timeout` and `failed`, so Dart can show a clear message for each.
+class TransportApi {
+  /// Constructor for [TransportApi].  The [binaryMessenger] named argument is
+  /// available for dependency injection.  If it is left null, the default
+  /// BinaryMessenger will be used which routes to the host platform.
+  TransportApi({BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
+      : pigeonVar_binaryMessenger = binaryMessenger,
+        pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
+  final BinaryMessenger? pigeonVar_binaryMessenger;
+
+  static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
+
+  final String pigeonVar_messageChannelSuffix;
+
+  /// Asks for the Wi-Fi permissions of this Android version (NEARBY_WIFI_DEVICES
+  /// on 13+, location before that). Returns whether they were granted.
+  Future<bool> requestWifiPermissions() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.requestWifiPermissions$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as bool;
+  }
+
+  Future<bool> isLocationEnabled() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.isLocationEnabled$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as bool;
+  }
+
+  Future<bool> isWifiEnabled() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.isWifiEnabled$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as bool;
+  }
+
+  Future<bool> supports5GHz() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.supports5GHz$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as bool;
+  }
+
+  /// Starts a LocalOnlyHotspot and returns its name and password. The system
+  /// chooses the band; an app cannot pick 5 GHz for this kind of hotspot.
+  Future<NativeNetworkInfo> startHotspot() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.startHotspot$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as NativeNetworkInfo;
+  }
+
+  Future<void> stopHotspot() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.stopHotspot$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
+  /// Joins a hotspot and binds this app's traffic to it. Android 10+ shows the
+  /// system's own approval dialog.
+  Future<void> joinNetwork(String ssid, String passphrase) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.joinNetwork$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[ssid, passphrase]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
+  Future<void> leaveNetwork() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.leaveNetwork$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
+  /// Becomes a Wi-Fi Direct group owner (on 5 GHz where supported) and
+  /// advertises this device so senders can find it.
+  Future<void> startDirectReceiver(String alias, String fingerprint, int port) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.startDirectReceiver$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[alias, fingerprint, port]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
+  Future<void> stopDirectReceiver() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.stopDirectReceiver$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
+  Future<List<NativeDirectPeer>> discoverDirectPeers(int timeoutMs) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.discoverDirectPeers$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[timeoutMs]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return (pigeonVar_replyValue! as List<Object?>).cast<NativeDirectPeer>();
+  }
+
+  /// Connects to a receiver's group and returns the group owner's IP address.
+  Future<String> connectDirect(NativeDirectPeer peer) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.connectDirect$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[peer]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as String;
+  }
+
+  Future<void> disconnectDirect() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.disconnectDirect$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
   }
 }

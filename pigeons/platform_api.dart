@@ -77,3 +77,80 @@ abstract class NativeDataCallbacks {
   @async
   int onNativeChunk(String sessionId, String fileId, int offset, int length);
 }
+
+/// Wi-Fi credentials of a hotspot or Wi-Fi Direct group this phone created.
+class NativeNetworkInfo {
+  NativeNetworkInfo({required this.ssid, required this.passphrase});
+
+  String ssid;
+  String passphrase;
+}
+
+/// A Zajel receiver found over Wi-Fi Direct service discovery.
+class NativeDirectPeer {
+  NativeDirectPeer({
+    required this.deviceAddress,
+    required this.alias,
+    required this.fingerprint,
+    required this.port,
+    this.networkName,
+    this.passphrase,
+  });
+
+  String deviceAddress;
+  String alias;
+  String fingerprint;
+  int port;
+
+  /// The receiver's group credentials (Android 10+). With them a sender joins
+  /// the group without an invitation prompt on the receiver.
+  String? networkName;
+  String? passphrase;
+}
+
+/// Router-free transports (SPEC.md, Phase 3). Errors use the codes
+/// `permission_denied`, `location_off`, `wifi_off`, `unsupported`, `busy`,
+/// `timeout` and `failed`, so Dart can show a clear message for each.
+@HostApi()
+abstract class TransportApi {
+  /// Asks for the Wi-Fi permissions of this Android version (NEARBY_WIFI_DEVICES
+  /// on 13+, location before that). Returns whether they were granted.
+  @async
+  bool requestWifiPermissions();
+
+  bool isLocationEnabled();
+
+  bool isWifiEnabled();
+
+  bool supports5GHz();
+
+  /// Starts a LocalOnlyHotspot and returns its name and password. The system
+  /// chooses the band; an app cannot pick 5 GHz for this kind of hotspot.
+  @async
+  NativeNetworkInfo startHotspot();
+
+  void stopHotspot();
+
+  /// Joins a hotspot and binds this app's traffic to it. Android 10+ shows the
+  /// system's own approval dialog.
+  @async
+  void joinNetwork(String ssid, String passphrase);
+
+  void leaveNetwork();
+
+  /// Becomes a Wi-Fi Direct group owner (on 5 GHz where supported) and
+  /// advertises this device so senders can find it.
+  @async
+  void startDirectReceiver(String alias, String fingerprint, int port);
+
+  void stopDirectReceiver();
+
+  @async
+  List<NativeDirectPeer> discoverDirectPeers(int timeoutMs);
+
+  /// Connects to a receiver's group and returns the group owner's IP address.
+  @async
+  String connectDirect(NativeDirectPeer peer);
+
+  void disconnectDirect();
+}

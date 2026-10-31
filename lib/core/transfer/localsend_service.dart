@@ -228,6 +228,15 @@ class LocalSendService {
 
   bool get isWebSharing => _webShare != null;
 
+  /// Arms the one-time QR pairing: the next sender must show the QR token or
+  /// type the PIN. Used while a hotspot is up for a QR code.
+  void armPairing({required String token, required String pin}) =>
+      _server.armPairing(token: token, pin: pin);
+
+  void disarmPairing() => _server.disarmPairing();
+
+  bool get isPairingArmed => _server.isPairingArmed;
+
   /// Announces again, for the "search again" action.
   void rescan() => _discovery.announce();
 

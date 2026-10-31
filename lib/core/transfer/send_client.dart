@@ -144,6 +144,7 @@ class SendClient {
     required List<SendFile> files,
     String? expectedFingerprint,
     String? pin,
+    String? pairToken,
   }) async {
     final peer = SendPeer(address, port, expectedFingerprint);
     final request = PrepareUploadRequest(
@@ -153,7 +154,7 @@ class SendClient {
     final response = await _post(
       peer,
       '/prepare-upload',
-      query: {'pin': ?pin},
+      query: {'pin': ?pin, 'pair': ?pairToken},
       body: jsonEncode(request.toJson()),
       headers: {if (offerExtensions) zajelExtensionHeader: zajelExtensionVersion},
     );

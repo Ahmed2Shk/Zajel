@@ -282,6 +282,110 @@ data class NativeAppInfo (
     return result
   }
 }
+
+/**
+ * Wi-Fi credentials of a hotspot or Wi-Fi Direct group this phone created.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class NativeNetworkInfo (
+  val ssid: String,
+  val passphrase: String
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): NativeNetworkInfo {
+      val ssid = pigeonVar_list[0] as String
+      val passphrase = pigeonVar_list[1] as String
+      return NativeNetworkInfo(ssid, passphrase)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      ssid,
+      passphrase,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as NativeNetworkInfo
+    return PlatformApiPigeonUtils.deepEquals(this.ssid, other.ssid) && PlatformApiPigeonUtils.deepEquals(this.passphrase, other.passphrase)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.ssid)
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.passphrase)
+    return result
+  }
+}
+
+/**
+ * A Zajel receiver found over Wi-Fi Direct service discovery.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class NativeDirectPeer (
+  val deviceAddress: String,
+  val alias: String,
+  val fingerprint: String,
+  val port: Long,
+  /**
+   * The receiver's group credentials (Android 10+). With them a sender joins
+   * the group without an invitation prompt on the receiver.
+   */
+  val networkName: String? = null,
+  val passphrase: String? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): NativeDirectPeer {
+      val deviceAddress = pigeonVar_list[0] as String
+      val alias = pigeonVar_list[1] as String
+      val fingerprint = pigeonVar_list[2] as String
+      val port = pigeonVar_list[3] as Long
+      val networkName = pigeonVar_list[4] as String?
+      val passphrase = pigeonVar_list[5] as String?
+      return NativeDirectPeer(deviceAddress, alias, fingerprint, port, networkName, passphrase)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      deviceAddress,
+      alias,
+      fingerprint,
+      port,
+      networkName,
+      passphrase,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as NativeDirectPeer
+    return PlatformApiPigeonUtils.deepEquals(this.deviceAddress, other.deviceAddress) && PlatformApiPigeonUtils.deepEquals(this.alias, other.alias) && PlatformApiPigeonUtils.deepEquals(this.fingerprint, other.fingerprint) && PlatformApiPigeonUtils.deepEquals(this.port, other.port) && PlatformApiPigeonUtils.deepEquals(this.networkName, other.networkName) && PlatformApiPigeonUtils.deepEquals(this.passphrase, other.passphrase)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.deviceAddress)
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.alias)
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.fingerprint)
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.port)
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.networkName)
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.passphrase)
+    return result
+  }
+}
 private open class PlatformApiPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
@@ -293,6 +397,16 @@ private open class PlatformApiPigeonCodec : StandardMessageCodec() {
       130.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
           NativeAppInfo.fromList(it)
+        }
+      }
+      131.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          NativeNetworkInfo.fromList(it)
+        }
+      }
+      132.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          NativeDirectPeer.fromList(it)
         }
       }
       else -> super.readValueOfType(type, buffer)
@@ -308,10 +422,19 @@ private open class PlatformApiPigeonCodec : StandardMessageCodec() {
         stream.write(130)
         writeValue(stream, value.toList())
       }
+      is NativeNetworkInfo -> {
+        stream.write(131)
+        writeValue(stream, value.toList())
+      }
+      is NativeDirectPeer -> {
+        stream.write(132)
+        writeValue(stream, value.toList())
+      }
       else -> super.writeValue(stream, value)
     }
   }
 }
+
 
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface PlatformApi {
@@ -603,6 +726,283 @@ class NativeDataCallbacks(private val binaryMessenger: BinaryMessenger, private 
       } else {
         callback(Result.failure(PlatformApiPigeonUtils.createConnectionError(channelName)))
       } 
+    }
+  }
+}
+/**
+ * Router-free transports (SPEC.md, Phase 3). Errors use the codes
+ * `permission_denied`, `location_off`, `wifi_off`, `unsupported`, `busy`,
+ * `timeout` and `failed`, so Dart can show a clear message for each.
+ *
+ * Generated interface from Pigeon that represents a handler of messages from Flutter.
+ */
+interface TransportApi {
+  /**
+   * Asks for the Wi-Fi permissions of this Android version (NEARBY_WIFI_DEVICES
+   * on 13+, location before that). Returns whether they were granted.
+   */
+  fun requestWifiPermissions(callback: (Result<Boolean>) -> Unit)
+  fun isLocationEnabled(): Boolean
+  fun isWifiEnabled(): Boolean
+  fun supports5GHz(): Boolean
+  /**
+   * Starts a LocalOnlyHotspot and returns its name and password. The system
+   * chooses the band; an app cannot pick 5 GHz for this kind of hotspot.
+   */
+  fun startHotspot(callback: (Result<NativeNetworkInfo>) -> Unit)
+  fun stopHotspot()
+  /**
+   * Joins a hotspot and binds this app's traffic to it. Android 10+ shows the
+   * system's own approval dialog.
+   */
+  fun joinNetwork(ssid: String, passphrase: String, callback: (Result<Unit>) -> Unit)
+  fun leaveNetwork()
+  /**
+   * Becomes a Wi-Fi Direct group owner (on 5 GHz where supported) and
+   * advertises this device so senders can find it.
+   */
+  fun startDirectReceiver(alias: String, fingerprint: String, port: Long, callback: (Result<Unit>) -> Unit)
+  fun stopDirectReceiver()
+  fun discoverDirectPeers(timeoutMs: Long, callback: (Result<List<NativeDirectPeer>>) -> Unit)
+  /** Connects to a receiver's group and returns the group owner's IP address. */
+  fun connectDirect(peer: NativeDirectPeer, callback: (Result<String>) -> Unit)
+  fun disconnectDirect()
+
+  companion object {
+    /** The codec used by TransportApi. */
+    val codec: MessageCodec<Any?> by lazy {
+      PlatformApiPigeonCodec()
+    }
+    /** Sets up an instance of `TransportApi` to handle messages through the `binaryMessenger`. */
+    @JvmOverloads
+    fun setUp(binaryMessenger: BinaryMessenger, api: TransportApi?, messageChannelSuffix: String = "") {
+      val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.requestWifiPermissions$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.requestWifiPermissions{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PlatformApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PlatformApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.isLocationEnabled$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.isLocationEnabled())
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.isWifiEnabled$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.isWifiEnabled())
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.supports5GHz$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.supports5GHz())
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.startHotspot$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.startHotspot{ result: Result<NativeNetworkInfo> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PlatformApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PlatformApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.stopHotspot$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.stopHotspot()
+              listOf(null)
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.joinNetwork$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val ssidArg = args[0] as String
+            val passphraseArg = args[1] as String
+            api.joinNetwork(ssidArg, passphraseArg) { result: Result<Unit> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PlatformApiPigeonUtils.wrapError(error))
+              } else {
+                reply.reply(PlatformApiPigeonUtils.wrapResult(null))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.leaveNetwork$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.leaveNetwork()
+              listOf(null)
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.startDirectReceiver$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val aliasArg = args[0] as String
+            val fingerprintArg = args[1] as String
+            val portArg = args[2] as Long
+            api.startDirectReceiver(aliasArg, fingerprintArg, portArg) { result: Result<Unit> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PlatformApiPigeonUtils.wrapError(error))
+              } else {
+                reply.reply(PlatformApiPigeonUtils.wrapResult(null))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.stopDirectReceiver$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.stopDirectReceiver()
+              listOf(null)
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.discoverDirectPeers$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val timeoutMsArg = args[0] as Long
+            api.discoverDirectPeers(timeoutMsArg) { result: Result<List<NativeDirectPeer>> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PlatformApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PlatformApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.connectDirect$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val peerArg = args[0] as NativeDirectPeer
+            api.connectDirect(peerArg) { result: Result<String> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PlatformApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PlatformApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.disconnectDirect$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.disconnectDirect()
+              listOf(null)
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
     }
   }
 }

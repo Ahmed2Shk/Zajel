@@ -12,6 +12,7 @@ import '../logging/log_providers.dart';
 import '../platform/native_data_bridge.dart';
 import '../platform/platform_api.g.dart';
 import '../security/device_identity.dart';
+import '../transport/transport_manager.dart';
 import 'localsend_service.dart';
 import 'protocol_models.dart';
 import 'send_client.dart';
@@ -162,7 +163,12 @@ class SendJobNotifier extends Notifier<SendJob> {
   @override
   SendJob build() => const SendJob();
 
-  Future<void> send(DiscoveredDevice target, {String? pin}) async {
+  Future<void> send(
+    DiscoveredDevice target, {
+    String? pin,
+    String? pairToken,
+    PeerEndpoint? endpoint,
+  }) async {
     final service = await ref.read(localSendServiceProvider.future);
     final files = ref.read(selectedFilesProvider);
     if (service == null || files.isEmpty) return;
@@ -182,6 +188,7 @@ class SendJobNotifier extends Notifier<SendJob> {
         files: files,
         expectedFingerprint: target.info.fingerprint,
         pin: pin,
+        pairToken: pairToken,
       );
       _session = session;
       state = state.copyWith(status: SendStatus.sending);
@@ -239,7 +246,66 @@ class SendJobNotifier extends Notifier<SendJob> {
       state = state.copyWith(status: SendStatus.failed, error: e.toString());
     } finally {
       await service.endTransfer();
+      // Leave the hotspot or Wi-Fi Direct group the transfer used.
+      if (endpoint != null) {
+        await ref.read(transportManagerProvider)?.release(endpoint);
+      }
     }
+  }
+
+  /// Sends to a peer that may be reachable several ways. The routes are tried
+  /// fastest first (Wi-Fi Direct, then a QR hotspot, then the shared Wi-Fi),
+  /// and the first one that connects carries the transfer.
+  Future<void> sendVia(List<PeerRoute> routes) async {
+    if (routes.isEmpty) return;
+    final files = ref.read(selectedFilesProvider);
+    if (files.isEmpty) return;
+    final manager = ref.read(transportManagerProvider);
+
+    _cancelled = false;
+    final first = routes.first;
+    state = SendJob(
+      status: SendStatus.connecting,
+      target: DiscoveredDevice(
+        DeviceInfo(alias: first.alias, fingerprint: first.fingerprint),
+        InternetAddress.loopbackIPv4,
+      ),
+      files: files,
+    );
+
+    final PeerEndpoint endpoint;
+    try {
+      // Without a manager (not Android) only the shared Wi-Fi is possible.
+      final usable = manager == null
+          ? routes.whereType<LanRoute>().toList()
+          : routes;
+      endpoint = await (manager ?? TransportManager(NoTransportBackend())).establish(usable);
+    } on AllTransportsFailed catch (e) {
+      ref.read(appLogProvider)?.warn('transport', e.toString());
+      state = state.copyWith(
+        status: SendStatus.failed,
+        error: 'transport:${e.failures.isEmpty ? TransportFailure.failed.name : e.failures.last.reason.name}',
+      );
+      return;
+    }
+    if (_cancelled) {
+      await manager?.release(endpoint);
+      return;
+    }
+
+    await send(
+      DiscoveredDevice(
+        DeviceInfo(
+          alias: endpoint.alias,
+          fingerprint: endpoint.fingerprint,
+          port: endpoint.port,
+        ),
+        endpoint.address,
+      ),
+      pin: endpoint.pin,
+      pairToken: endpoint.pairToken,
+      endpoint: endpoint,
+    );
   }
 
   Future<void> cancel() async {
@@ -306,3 +372,9 @@ class WebShareNotifier extends Notifier<WebShareStatus?> {
 final webShareProvider = NotifierProvider<WebShareNotifier, WebShareStatus?>(
   WebShareNotifier.new,
 );
+
+/// Router-free transports (QR hotspot and Wi-Fi Direct). Null away from Android.
+final transportManagerProvider = Provider<TransportManager?>((ref) {
+  if (kIsWeb || !Platform.isAndroid) return null;
+  return TransportManager(PigeonTransportBackend());
+});

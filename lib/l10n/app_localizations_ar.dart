@@ -350,6 +350,84 @@ class AppLocalizationsAr extends AppLocalizations {
   String get webPageNoFiles => 'لا توجد ملفات للتنزيل';
 
   @override
+  String get qrShowIntro =>
+      'اطلب من الجهاز الآخر مسح هذا الرمز. سيتصل بهذا الجهاز مباشرة بدون إنترنت أو راوتر.';
+
+  @override
+  String get qrPinLabel => 'رمز PIN';
+
+  @override
+  String get qrNetworkLabel => 'الشبكة';
+
+  @override
+  String get qrStarting => 'جاري تجهيز الاتصال…';
+
+  @override
+  String get qrScanHint => 'وجّه الكاميرا نحو رمز QR المعروض على الجهاز الآخر';
+
+  @override
+  String get qrInvalid => 'هذا الرمز ليس رمز زاجل';
+
+  @override
+  String get qrConnecting => 'جاري الاتصال بالجهاز…';
+
+  @override
+  String get cameraDenied =>
+      'تم رفض إذن الكاميرا. اسمح بالوصول إلى الكاميرا لمسح الرمز.';
+
+  @override
+  String get retry => 'إعادة المحاولة';
+
+  @override
+  String get tfPermission =>
+      'اسمح بإذن «الأجهزة القريبة» (أو «الموقع» على أندرويد 12 وما قبله) ثم أعد المحاولة.';
+
+  @override
+  String get tfLocation =>
+      'شغّل خدمة الموقع في الجهاز، فهي مطلوبة على أندرويد 12 وما قبله.';
+
+  @override
+  String get tfWifi => 'شغّل الواي فاي (لا يلزم الاتصال بشبكة).';
+
+  @override
+  String get tfUnsupported => 'هذا الجهاز لا يدعم هذه الميزة.';
+
+  @override
+  String get tfBusy =>
+      'الواي فاي مشغول. أوقف نقطة الاتصال الخاصة بالجوال أو أي اتصال Wi-Fi Direct ثم حاول مجدداً.';
+
+  @override
+  String get tfTimeout =>
+      'انتهت مهلة الاتصال. قرّب الجهازين من بعض وحاول مرة أخرى.';
+
+  @override
+  String get tfFailed => 'تعذّر إنشاء الاتصال.';
+
+  @override
+  String get suggestQr => 'لم نجد أجهزة. جرّب رمز QR للاتصال بدون راوتر.';
+
+  @override
+  String get wifiDirect => 'Wi-Fi Direct';
+
+  @override
+  String get directSearch => 'البحث عبر Wi-Fi Direct';
+
+  @override
+  String get directVisible => 'إظهار هذا الجهاز عبر Wi-Fi Direct';
+
+  @override
+  String get directVisibleOn => 'هذا الجهاز ظاهر عبر Wi-Fi Direct';
+
+  @override
+  String get directStop => 'إيقاف الظهور';
+
+  @override
+  String get directBadge => 'مباشر';
+
+  @override
+  String get directNone => 'لم يُعثر على أجهزة عبر Wi-Fi Direct';
+
+  @override
   String get exportLogs => 'تصدير السجل';
 
   @override

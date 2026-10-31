@@ -172,6 +172,7 @@ class ReceiveServer {
   final _pinFailures = <String, List<DateTime>>{};
   HttpServer? _server;
   _Session? _session;
+  ({String token, String pin})? _pairing;
 
   Stream<ReceiveEvent> get events => _events.stream;
 
@@ -310,6 +311,7 @@ class ReceiveServer {
       _randomToken(),
     );
     _session = session;
+    _pairing = null; // a pairing code works once
     _touch();
     _events.add(SessionStarted(session.id, transfer));
 
@@ -730,9 +732,22 @@ class ReceiveServer {
     _events.add(SessionEnded(session.id, cancelled: cancelled));
   }
 
+  /// Arms a one-time pairing: until the first transfer is accepted, a sender
+  /// must present either [token] (carried in the QR code) or [pin] (shown under
+  /// it). This replaces the permanent PIN while armed, because showing the QR
+  /// code is the owner's explicit invitation.
+  void armPairing({required String token, required String pin}) {
+    _pairing = (token: token, pin: pin);
+  }
+
+  void disarmPairing() => _pairing = null;
+
+  bool get isPairingArmed => _pairing != null;
+
   void _checkPin(HttpRequest request, InternetAddress ip) {
+    final pairing = _pairing;
     final required = pin;
-    if (required == null) return;
+    if (required == null && pairing == null) return;
 
     final key = ip.address;
     final now = DateTime.now();
@@ -745,8 +760,15 @@ class ReceiveServer {
     }
 
     final supplied = request.uri.queryParameters['pin'];
-    if (supplied == null) throw const _HttpError(401, 'PIN required');
-    if (!_constantTimeEquals(supplied, required)) {
+    final pair = request.uri.queryParameters['pair'];
+    if (supplied == null && pair == null) {
+      throw const _HttpError(401, 'PIN required');
+    }
+    final ok = pairing != null
+        ? ((pair != null && _constantTimeEquals(pair, pairing.token)) ||
+              (supplied != null && _constantTimeEquals(supplied, pairing.pin)))
+        : (supplied != null && _constantTimeEquals(supplied, required!));
+    if (!ok) {
       failures.add(now);
       throw const _HttpError(401, 'Invalid PIN');
     }

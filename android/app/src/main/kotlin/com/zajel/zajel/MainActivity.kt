@@ -36,14 +36,59 @@ class MainActivity : FlutterActivity() {
             },
         )
         NativeDataApi.setUp(messenger, NativeDataApiImpl(dataServer!!))
+
+        val transport = WifiTransport(applicationContext) { permissions, done ->
+            requestWifiPermissions(permissions, done)
+        }
+        wifiTransport = transport
+        TransportApi.setUp(messenger, transport)
+    }
+
+    /** Asks for runtime permissions and reports the outcome to [done]. */
+    private fun requestWifiPermissions(permissions: Array<String>, done: (Boolean) -> Unit) {
+        val missing = permissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (missing.isEmpty()) {
+            done(true)
+            return
+        }
+        pendingPermission?.invoke(false) // a newer request replaces an unanswered one
+        pendingPermission = done
+        ActivityCompat.requestPermissions(this, missing.toTypedArray(), WIFI_PERMISSION_REQUEST)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == WIFI_PERMISSION_REQUEST) {
+            val granted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+            pendingPermission?.invoke(granted)
+            pendingPermission = null
+        }
     }
 
     override fun onDestroy() {
+        wifiTransport?.let {
+            it.stopHotspot()
+            it.leaveNetwork()
+            it.stopDirectReceiver()
+            it.disconnectDirect()
+        }
         dataServer?.stop()
         super.onDestroy()
     }
 
     private var dataServer: NativeDataServer? = null
+    private var wifiTransport: WifiTransport? = null
+    private var pendingPermission: ((Boolean) -> Unit)? = null
+
+    private companion object {
+        const val WIFI_PERMISSION_REQUEST = 5318
+    }
 }
 
 private class NativeDataApiImpl(private val server: NativeDataServer) : NativeDataApi {

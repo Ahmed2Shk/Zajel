@@ -722,6 +722,150 @@ abstract class AppLocalizations {
   /// **'لا توجد ملفات للتنزيل'**
   String get webPageNoFiles;
 
+  /// No description provided for @qrShowIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلب من الجهاز الآخر مسح هذا الرمز. سيتصل بهذا الجهاز مباشرة بدون إنترنت أو راوتر.'**
+  String get qrShowIntro;
+
+  /// No description provided for @qrPinLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رمز PIN'**
+  String get qrPinLabel;
+
+  /// No description provided for @qrNetworkLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشبكة'**
+  String get qrNetworkLabel;
+
+  /// No description provided for @qrStarting.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري تجهيز الاتصال…'**
+  String get qrStarting;
+
+  /// No description provided for @qrScanHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'وجّه الكاميرا نحو رمز QR المعروض على الجهاز الآخر'**
+  String get qrScanHint;
+
+  /// No description provided for @qrInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الرمز ليس رمز زاجل'**
+  String get qrInvalid;
+
+  /// No description provided for @qrConnecting.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري الاتصال بالجهاز…'**
+  String get qrConnecting;
+
+  /// No description provided for @cameraDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم رفض إذن الكاميرا. اسمح بالوصول إلى الكاميرا لمسح الرمز.'**
+  String get cameraDenied;
+
+  /// No description provided for @retry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get retry;
+
+  /// No description provided for @tfPermission.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمح بإذن «الأجهزة القريبة» (أو «الموقع» على أندرويد 12 وما قبله) ثم أعد المحاولة.'**
+  String get tfPermission;
+
+  /// No description provided for @tfLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّل خدمة الموقع في الجهاز، فهي مطلوبة على أندرويد 12 وما قبله.'**
+  String get tfLocation;
+
+  /// No description provided for @tfWifi.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّل الواي فاي (لا يلزم الاتصال بشبكة).'**
+  String get tfWifi;
+
+  /// No description provided for @tfUnsupported.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الجهاز لا يدعم هذه الميزة.'**
+  String get tfUnsupported;
+
+  /// No description provided for @tfBusy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الواي فاي مشغول. أوقف نقطة الاتصال الخاصة بالجوال أو أي اتصال Wi-Fi Direct ثم حاول مجدداً.'**
+  String get tfBusy;
+
+  /// No description provided for @tfTimeout.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت مهلة الاتصال. قرّب الجهازين من بعض وحاول مرة أخرى.'**
+  String get tfTimeout;
+
+  /// No description provided for @tfFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر إنشاء الاتصال.'**
+  String get tfFailed;
+
+  /// No description provided for @suggestQr.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نجد أجهزة. جرّب رمز QR للاتصال بدون راوتر.'**
+  String get suggestQr;
+
+  /// No description provided for @wifiDirect.
+  ///
+  /// In ar, this message translates to:
+  /// **'Wi-Fi Direct'**
+  String get wifiDirect;
+
+  /// No description provided for @directSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'البحث عبر Wi-Fi Direct'**
+  String get directSearch;
+
+  /// No description provided for @directVisible.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار هذا الجهاز عبر Wi-Fi Direct'**
+  String get directVisible;
+
+  /// No description provided for @directVisibleOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الجهاز ظاهر عبر Wi-Fi Direct'**
+  String get directVisibleOn;
+
+  /// No description provided for @directStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف الظهور'**
+  String get directStop;
+
+  /// No description provided for @directBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'مباشر'**
+  String get directBadge;
+
+  /// No description provided for @directNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُعثر على أجهزة عبر Wi-Fi Direct'**
+  String get directNone;
+
   /// No description provided for @exportLogs.
   ///
   /// In ar, this message translates to:

@@ -9,6 +9,7 @@ import '../../core/transfer/transfer_providers.dart';
 import '../../core/widgets/zajel_widgets.dart';
 import '../../l10n/l10n.dart';
 import '../history/history_store.dart';
+import '../qr/transport_messages.dart';
 import 'radar_view.dart';
 
 class TransferProgressScreen extends ConsumerStatefulWidget {
@@ -160,6 +161,8 @@ class _TransferProgressScreenState
                           Text(
                             job.error == 'declined'
                                 ? l10n.declinedByReceiver
+                                : transportFailureOf(job.error) != null
+                                ? transportMessage(l10n, transportFailureOf(job.error)!)
                                 : '${l10n.sendFailed}\n${job.error ?? ''}',
                             textAlign: TextAlign.center,
                           ),

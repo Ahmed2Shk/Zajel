@@ -77,6 +77,11 @@ Future<void> _go(WidgetTester tester, ProviderContainer container, String route)
   // Some screens animate forever, so never wait for them to settle.
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 600));
+  // The discovery screen starts a 5 second timer; let it run out so the test
+  // does not end with a pending timer.
+  if (route == AppRoutes.discovery) {
+    await tester.pump(const Duration(seconds: 6));
+  }
 }
 
 void main() {

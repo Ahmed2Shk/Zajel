@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../core/discovery/multicast_discovery.dart';
 import '../../core/transfer/protocol_models.dart';
 import '../../core/widgets/zajel_widgets.dart';
 
@@ -14,6 +13,28 @@ IconData deviceIconFor(DeviceType type) => switch (type) {
   DeviceType.server => Icons.dns,
 };
 
+/// One device on the radar. It may be reachable more than one way; the screen
+/// decides what tapping it does.
+class RadarItem {
+  const RadarItem({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+    this.badge,
+  });
+
+  final String id;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  /// Short label such as "Direct", for a device found over Wi-Fi Direct.
+  final String? badge;
+  final VoidCallback onTap;
+}
+
 /// A radar around this device with nearby devices as bubbles.
 ///
 /// Bubbles keep a stable place (ordered by fingerprint) so they do not jump
@@ -21,14 +42,12 @@ IconData deviceIconFor(DeviceType type) => switch (type) {
 class RadarView extends StatefulWidget {
   const RadarView({
     required this.selfName,
-    required this.devices,
-    required this.onSelect,
+    required this.items,
     super.key,
   });
 
   final String selfName;
-  final List<DiscoveredDevice> devices;
-  final ValueChanged<DiscoveredDevice> onSelect;
+  final List<RadarItem> items;
 
   @override
   State<RadarView> createState() => _RadarViewState();
@@ -49,8 +68,8 @@ class _RadarViewState extends State<RadarView> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final devices = [...widget.devices]
-      ..sort((a, b) => a.info.fingerprint.compareTo(b.info.fingerprint));
+    final devices = [...widget.items]
+      ..sort((a, b) => a.id.compareTo(b.id));
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -101,7 +120,7 @@ class _RadarViewState extends State<RadarView> with SingleTickerProviderStateMix
   }
 
   Widget _positioned(
-    DiscoveredDevice device, {
+    RadarItem item, {
     required int index,
     required int count,
     required Offset center,
@@ -121,30 +140,26 @@ class _RadarViewState extends State<RadarView> with SingleTickerProviderStateMix
       left: left,
       top: top,
       width: size.width,
-      child: _Bubble(device: device, onTap: () => widget.onSelect(device)),
+      child: _Bubble(item: item),
     );
   }
 }
 
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.device, required this.onTap});
+  const _Bubble({required this.item});
 
-  final DiscoveredDevice device;
-  final VoidCallback onTap;
+  final RadarItem item;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return ZajelCard(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      onTap: onTap,
+      onTap: item.onTap,
       child: Row(
         children: [
-          IconBadge(
-            icon: deviceIconFor(device.info.deviceType),
-            color: theme.colorScheme.primary,
-            size: 36,
-          ),
+          IconBadge(icon: item.icon, color: scheme.primary, size: 36),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -152,13 +167,13 @@ class _Bubble extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  device.info.alias,
+                  item.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 Text(
-                  device.info.deviceModel ?? device.address.address,
+                  item.subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall,
@@ -166,6 +181,19 @@ class _Bubble extends StatelessWidget {
               ],
             ),
           ),
+          if (item.badge != null)
+            Container(
+              margin: const EdgeInsetsDirectional.only(start: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: scheme.secondary.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                item.badge!,
+                style: theme.textTheme.labelSmall?.copyWith(color: scheme.secondary),
+              ),
+            ),
         ],
       ),
     );

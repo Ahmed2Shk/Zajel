@@ -351,6 +351,86 @@ class AppLocalizationsEn extends AppLocalizations {
   String get webPageNoFiles => 'No files to download';
 
   @override
+  String get qrShowIntro =>
+      'Ask the other device to scan this code. It will connect straight to this device, with no internet or router.';
+
+  @override
+  String get qrPinLabel => 'PIN';
+
+  @override
+  String get qrNetworkLabel => 'Network';
+
+  @override
+  String get qrStarting => 'Getting the connection ready…';
+
+  @override
+  String get qrScanHint =>
+      'Point the camera at the QR code on the other device';
+
+  @override
+  String get qrInvalid => 'That is not a Zajel code';
+
+  @override
+  String get qrConnecting => 'Connecting to the device…';
+
+  @override
+  String get cameraDenied =>
+      'Camera permission was denied. Allow camera access to scan the code.';
+
+  @override
+  String get retry => 'Try again';
+
+  @override
+  String get tfPermission =>
+      'Allow the \"Nearby devices\" permission (or \"Location\" on Android 12 and earlier), then try again.';
+
+  @override
+  String get tfLocation =>
+      'Turn on Location in the device settings. Android 12 and earlier need it for this.';
+
+  @override
+  String get tfWifi => 'Turn on Wi-Fi (you do not need to join a network).';
+
+  @override
+  String get tfUnsupported => 'This device does not support this feature.';
+
+  @override
+  String get tfBusy =>
+      'Wi-Fi is busy. Turn off the phone\'s own hotspot or any Wi-Fi Direct connection, then try again.';
+
+  @override
+  String get tfTimeout =>
+      'The connection timed out. Move the devices closer and try again.';
+
+  @override
+  String get tfFailed => 'Could not set up the connection.';
+
+  @override
+  String get suggestQr =>
+      'No devices found. Try a QR code to connect with no router.';
+
+  @override
+  String get wifiDirect => 'Wi-Fi Direct';
+
+  @override
+  String get directSearch => 'Search over Wi-Fi Direct';
+
+  @override
+  String get directVisible => 'Make this device visible over Wi-Fi Direct';
+
+  @override
+  String get directVisibleOn => 'This device is visible over Wi-Fi Direct';
+
+  @override
+  String get directStop => 'Stop being visible';
+
+  @override
+  String get directBadge => 'Direct';
+
+  @override
+  String get directNone => 'No devices found over Wi-Fi Direct';
+
+  @override
   String get exportLogs => 'Export log';
 
   @override
