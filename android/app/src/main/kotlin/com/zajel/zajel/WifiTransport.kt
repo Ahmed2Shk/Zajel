@@ -390,8 +390,13 @@ class WifiTransport(
                 manager.addServiceRequest(ch, request, object : WifiP2pManager.ActionListener {
                     override fun onSuccess() {
                         manager.discoverPeers(ch, object : WifiP2pManager.ActionListener {
-                            override fun onSuccess() = Log.d(TAG, "discoverPeers started")
-                            override fun onFailure(reason: Int) = Log.w(TAG, "discoverPeers failed ($reason)")
+                            override fun onSuccess() {
+                                Log.d(TAG, "discoverPeers started")
+                            }
+
+                            override fun onFailure(reason: Int) {
+                                Log.w(TAG, "discoverPeers failed ($reason)")
+                            }
                         })
                         repeatQuery(0)
                     }
