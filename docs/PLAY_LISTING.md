@@ -56,6 +56,10 @@ testing on real phones, from `docs/BENCHMARKS.md`.)
 
 - **Foreground service type:** data sync (keeps a transfer running with the screen off).
 - **Permissions:** nearby devices / location (hotspot and Wi-Fi Direct), camera (QR), notifications.
+- **Photos and videos permission** (`READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO`): Play restricts these to apps whose
+  core feature needs persistent access to the media library. Zajel's picker shows a thumbnail grid of the user's
+  photos and videos for file transfer; be ready to explain that in the declaration, or switch to the system
+  Photo Picker if Google asks for it. The app does not request all-files access.
 - **Package visibility:** uses a `<queries>` launcher intent to list launchable apps. It does **not** use
   QUERY_ALL_PACKAGES.
 - **Target audience:** all ages. **Content rating:** complete the questionnaire. No user-generated content.

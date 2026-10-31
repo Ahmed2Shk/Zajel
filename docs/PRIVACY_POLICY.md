@@ -35,6 +35,7 @@ network you trust.
 | --- | --- |
 | Network, Wi-Fi state, multicast | Find nearby devices and transfer files. |
 | Nearby devices (Android 13+) / Location (Android 12 and earlier) | Required by Android to create or join a hotspot and to use Wi-Fi Direct. Zajel does not read your location. |
+| Photos and videos (Android 13+: read images, read videos; Android 12 and earlier: read storage) | Show your photos and videos as pictures in the file picker so you can choose what to send. Nothing is uploaded or stored; files leave the device only when you send them to another device. Android 14 lets you share only some photos with the app. |
 | Camera | Scan a QR code from another device. Images are not stored or sent. |
 | Foreground service, wake lock, notifications | Keep a transfer running with the screen off and show that one is in progress. |
 | Change Wi-Fi / network state | Join the other device's hotspot or Wi-Fi Direct group. |

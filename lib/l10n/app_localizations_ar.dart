@@ -350,6 +350,36 @@ class AppLocalizationsAr extends AppLocalizations {
   String get webPageNoFiles => 'لا توجد ملفات للتنزيل';
 
   @override
+  String get mediaDenied => 'نحتاج إذن الوصول إلى الصور والفيديو لعرضها هنا.';
+
+  @override
+  String get mediaAllow => 'السماح بالوصول';
+
+  @override
+  String get mediaOpenSettings => 'فتح الإعدادات';
+
+  @override
+  String get mediaLimited =>
+      'سمحت بجزء من الصور فقط. يمكنك تغيير ذلك من الإعدادات.';
+
+  @override
+  String get mediaEmpty => 'لا توجد عناصر';
+
+  @override
+  String get mediaUnsupported =>
+      'عرض الصور والفيديو متاح على أندرويد وآيفون فقط. استخدم تبويب الملفات.';
+
+  @override
+  String get mediaUnreadable => 'تعذّر قراءة هذا الملف';
+
+  @override
+  String get filesAndroidNote =>
+      'لا يسمح أندرويد للتطبيقات بعرض كل الملفات تلقائياً. اختر الملفات من مدير الملفات.';
+
+  @override
+  String get reviewSelection => 'مراجعة المحدد';
+
+  @override
   String get qrShowIntro =>
       'اطلب من الجهاز الآخر مسح هذا الرمز. سيتصل بهذا الجهاز مباشرة بدون إنترنت أو راوتر.';
 

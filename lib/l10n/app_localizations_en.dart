@@ -351,6 +351,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get webPageNoFiles => 'No files to download';
 
   @override
+  String get mediaDenied =>
+      'Zajel needs permission to read your photos and videos to show them here.';
+
+  @override
+  String get mediaAllow => 'Allow access';
+
+  @override
+  String get mediaOpenSettings => 'Open settings';
+
+  @override
+  String get mediaLimited =>
+      'You allowed only some photos. You can change that in settings.';
+
+  @override
+  String get mediaEmpty => 'Nothing here';
+
+  @override
+  String get mediaUnsupported =>
+      'Browsing photos and videos works on Android and iPhone only. Use the Files tab.';
+
+  @override
+  String get mediaUnreadable => 'This file could not be read';
+
+  @override
+  String get filesAndroidNote =>
+      'Android does not let apps list every file automatically. Pick files from the file manager.';
+
+  @override
+  String get reviewSelection => 'Review selection';
+
+  @override
   String get qrShowIntro =>
       'Ask the other device to scan this code. It will connect straight to this device, with no internet or router.';
 

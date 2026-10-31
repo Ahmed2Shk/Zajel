@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:basic_utils/basic_utils.dart';
@@ -52,7 +53,9 @@ class DeviceIdentity {
         fingerprint: fingerprintOfPem(certPem),
       );
     }
-    final identity = generate();
+    // Generating a 2048-bit key takes seconds on a phone. Do it off the main
+    // isolate so the first launch does not freeze the screen.
+    final identity = await Isolate.run(generate);
     await directory.create(recursive: true);
     await certFile.writeAsString(identity.certificatePem);
     await keyFile.writeAsString(identity.privateKeyPem);

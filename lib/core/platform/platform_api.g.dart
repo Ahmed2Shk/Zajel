@@ -515,6 +515,27 @@ class PlatformApi {
     ;
     return (pigeonVar_replyValue! as List<Object?>).cast<NativeAppInfo>();
   }
+
+  /// The launcher icon of an app as PNG bytes, or null. Drawn on a background
+  /// thread, so a long list of apps can ask for icons as they scroll into view.
+  Future<Uint8List?> getAppIcon(String packageName, int sizePx) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.PlatformApi.getAppIcon$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[packageName, sizePx]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+    return pigeonVar_replyValue as Uint8List?;
+  }
 }
 
 /// The Android data path. A TLS server written in Kotlin receives file chunks

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
+import '../../core/media/media_library.dart';
 import '../../core/platform/platform_api.g.dart';
 import '../../core/platform/platform_providers.dart';
 import '../../core/router/app_router.dart';
@@ -14,6 +15,7 @@ import '../../core/transfer/send_client.dart';
 import '../../core/transfer/transfer_providers.dart';
 import '../../core/widgets/zajel_widgets.dart';
 import '../../l10n/l10n.dart';
+import 'media_grid.dart';
 
 enum _PickerTab { photos, videos, apps, files }
 
@@ -26,10 +28,13 @@ class FilePickerScreen extends ConsumerStatefulWidget {
 
 class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
   _PickerTab _tab = _PickerTab.photos;
-  String _appQuery = '';
 
-  /// Adds the picked paths to the selection, ignoring ones already there.
-  Future<void> _add(Iterable<({String path, String name})> picked) async {
+  // A tab is built the first time it is opened and then kept, so scrolling and
+  // loaded pictures survive switching tabs, while permission prompts only
+  // appear for the tabs the user actually opens.
+  final _opened = <_PickerTab>{_PickerTab.photos};
+
+  Future<void> _addPaths(Iterable<({String path, String name})> picked) async {
     final notifier = ref.read(selectedFilesProvider.notifier);
     final files = [...ref.read(selectedFilesProvider)];
     final known = files.map((f) => f.file.path).toSet();
@@ -46,9 +51,9 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
     notifier.set(files);
   }
 
-  Future<void> _pick(FileType type) async {
-    final picked = await FilePicker.pickFiles(type: type);
-    await _add([
+  Future<void> _pickAny() async {
+    final picked = await FilePicker.pickFiles();
+    await _addPaths([
       for (final f in picked)
         if (f.path != null) (path: f.path!, name: f.name),
     ]);
@@ -56,15 +61,22 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
 
   void _toggleApp(NativeAppInfo app, bool selected) {
     final notifier = ref.read(selectedFilesProvider.notifier);
-    final files = ref.read(selectedFilesProvider);
     if (selected) {
-      _add([(path: app.apkPath, name: '${app.name}.apk')]);
+      _addPaths([(path: app.apkPath, name: '${app.name}.apk')]);
     } else {
       notifier.set([
-        for (final f in files)
+        for (final f in ref.read(selectedFilesProvider))
           if (f.file.path != app.apkPath) f,
       ]);
     }
+  }
+
+  void _review() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const _SelectionSheet(),
+    );
   }
 
   @override
@@ -74,6 +86,16 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
     final scheme = theme.colorScheme;
     final files = ref.watch(selectedFilesProvider);
     final total = files.fold<int>(0, (sum, f) => sum + f.size);
+
+    Widget tabBody(_PickerTab tab) {
+      if (!_opened.contains(tab)) return const SizedBox.shrink();
+      return switch (tab) {
+        _PickerTab.photos => const MediaGrid(kind: MediaKind.image),
+        _PickerTab.videos => const MediaGrid(kind: MediaKind.video),
+        _PickerTab.apps => _AppsList(onToggle: _toggleApp),
+        _PickerTab.files => _FilesTab(onPick: _pickAny),
+      };
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.filePickerTitle)),
@@ -91,66 +113,19 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
                   ButtonSegment(value: _PickerTab.files, label: Text(l10n.tabFiles)),
                 ],
                 selected: {_tab},
-                onSelectionChanged: (value) => setState(() => _tab = value.first),
+                onSelectionChanged: (value) => setState(() {
+                  _tab = value.first;
+                  _opened.add(_tab);
+                }),
               ),
             ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                children: [
-                  switch (_tab) {
-                    _PickerTab.photos => _PickButton(
-                      icon: Icons.image_outlined,
-                      label: l10n.pickPhotos,
-                      onPressed: () => _pick(FileType.image),
-                    ),
-                    _PickerTab.videos => _PickButton(
-                      icon: Icons.movie_outlined,
-                      label: l10n.pickVideos,
-                      onPressed: () => _pick(FileType.video),
-                    ),
-                    _PickerTab.files => _PickButton(
-                      icon: Icons.add,
-                      label: l10n.chooseFiles,
-                      onPressed: () => _pick(FileType.any),
-                    ),
-                    _PickerTab.apps => _AppsList(
-                      query: _appQuery,
-                      onQuery: (q) => setState(() => _appQuery = q),
-                      selectedPaths: {for (final f in files) f.file.path},
-                      onToggle: _toggleApp,
-                    ),
-                  },
-                  if (files.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            l10n.selectedItems(files.length),
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: ref.read(selectedFilesProvider.notifier).clear,
-                          child: Text(l10n.clearSelection),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    for (var i = 0; i < files.length; i++) ...[
-                      _SelectedTile(
-                        file: files[i],
-                        onRemove: () => ref
-                            .read(selectedFilesProvider.notifier)
-                            .set([...files]..removeAt(i)),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ],
-                ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: IndexedStack(
+                  index: _PickerTab.values.indexOf(_tab),
+                  children: [for (final tab in _PickerTab.values) tabBody(tab)],
+                ),
               ),
             ),
             // The send bar stays put while the list scrolls.
@@ -163,22 +138,27 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          files.isEmpty
-                              ? l10n.noFilesSelected
-                              : l10n.selectedItems(files.length),
-                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                    child: InkWell(
+                      onTap: files.isEmpty ? null : _review,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              files.isEmpty ? l10n.noFilesSelected : l10n.selectedItems(files.length),
+                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            if (files.isNotEmpty)
+                              Text(
+                                '${l10n.readyToSendSize(formatBytes(total))} · ${l10n.reviewSelection}',
+                                style: theme.textTheme.bodySmall?.copyWith(color: scheme.primary),
+                              ),
+                          ],
                         ),
-                        if (files.isNotEmpty)
-                          Text(
-                            l10n.readyToSendSize(formatBytes(total)),
-                            style: theme.textTheme.bodySmall?.copyWith(color: scheme.primary),
-                          ),
-                      ],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -197,25 +177,36 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
   }
 }
 
-class _PickButton extends StatelessWidget {
-  const _PickButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-  });
+class _FilesTab extends ConsumerWidget {
+  const _FilesTab({required this.onPick});
 
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
+  final VoidCallback onPick;
 
   @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(icon: Icon(icon), label: Text(label), onPressed: onPressed);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final files = ref.watch(selectedFilesProvider);
+    return ListView(
+      children: [
+        OutlinedButton.icon(icon: const Icon(Icons.add), label: Text(l10n.chooseFiles), onPressed: onPick),
+        const SizedBox(height: 10),
+        Text(l10n.filesAndroidNote, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 16),
+        for (var i = 0; i < files.length; i++) ...[
+          SelectedFileTile(
+            file: files[i],
+            onRemove: () => ref.read(selectedFilesProvider.notifier).set([...files]..removeAt(i)),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ],
+    );
   }
 }
 
-class _SelectedTile extends StatelessWidget {
-  const _SelectedTile({required this.file, required this.onRemove});
+/// A selected file with a small picture if it is an image, and a remove button.
+class SelectedFileTile extends StatelessWidget {
+  const SelectedFileTile({required this.file, required this.onRemove, super.key});
 
   final SendFile file;
   final VoidCallback onRemove;
@@ -263,64 +254,134 @@ class _SelectedTile extends StatelessWidget {
   }
 }
 
-class _AppsList extends ConsumerWidget {
-  const _AppsList({
-    required this.query,
-    required this.onQuery,
-    required this.selectedPaths,
-    required this.onToggle,
-  });
-
-  final String query;
-  final ValueChanged<String> onQuery;
-  final Set<String> selectedPaths;
-  final void Function(NativeAppInfo app, bool selected) onToggle;
+class _SelectionSheet extends ConsumerWidget {
+  const _SelectionSheet();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final files = ref.watch(selectedFilesProvider);
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.7),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.selectedItems(files.length),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      ref.read(selectedFilesProvider.notifier).clear();
+                      Navigator.of(context).pop();
+                    },
+                    child: Text(l10n.clearSelection),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: files.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, i) => SelectedFileTile(
+                    file: files[i],
+                    onRemove: () => ref.read(selectedFilesProvider.notifier).set([...files]..removeAt(i)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AppsList extends ConsumerStatefulWidget {
+  const _AppsList({required this.onToggle});
+
+  final void Function(NativeAppInfo app, bool selected) onToggle;
+
+  @override
+  ConsumerState<_AppsList> createState() => _AppsListState();
+}
+
+class _AppsListState extends ConsumerState<_AppsList> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final apps = ref.watch(installedAppsProvider);
+    final selectedPaths = ref.watch(
+      selectedFilesProvider.select((files) => {for (final f in files) f.file.path}),
+    );
 
     return apps.when(
-      loading: () => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(child: Text(l10n.appsLoading)),
-      ),
-      error: (_, _) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(child: Text(l10n.appsUnsupported)),
-      ),
+      loading: () => Center(child: Text(l10n.appsLoading)),
+      error: (_, _) => Center(child: Text(l10n.appsUnsupported)),
       data: (list) {
         if (list.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: Text(!kIsWeb && Platform.isAndroid ? l10n.appsNone : l10n.appsUnsupported),
-            ),
+          return Center(
+            child: Text(!kIsWeb && Platform.isAndroid ? l10n.appsNone : l10n.appsUnsupported),
           );
         }
         final shown = [
           for (final app in list)
-            if (app.name.toLowerCase().contains(query.toLowerCase())) app,
+            if (app.name.toLowerCase().contains(_query.toLowerCase())) app,
         ];
         return Column(
           children: [
             TextField(
-              onChanged: onQuery,
+              onChanged: (q) => setState(() => _query = q),
               decoration: const InputDecoration(prefixIcon: Icon(Icons.search)),
             ),
             const SizedBox(height: 8),
-            for (final app in shown)
-              CheckboxListTile(
-                value: selectedPaths.contains(app.apkPath),
-                onChanged: (value) => onToggle(app, value ?? false),
-                secondary: const IconBadge(icon: Icons.android, size: 40),
-                title: Text(app.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Text(formatBytes(app.size)),
+            Expanded(
+              child: ListView.builder(
+                itemCount: shown.length,
+                itemBuilder: (context, index) {
+                  final app = shown[index];
+                  return CheckboxListTile(
+                    key: ValueKey(app.packageName),
+                    value: selectedPaths.contains(app.apkPath),
+                    onChanged: (value) => widget.onToggle(app, value ?? false),
+                    secondary: _AppIcon(packageName: app.packageName),
+                    title: Text(app.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(formatBytes(app.size)),
+                  );
+                },
               ),
+            ),
           ],
         );
       },
+    );
+  }
+}
+
+/// The app's real icon, drawn when the row scrolls into view.
+class _AppIcon extends ConsumerWidget {
+  const _AppIcon({required this.packageName});
+
+  final String packageName;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bytes = ref.watch(appIconProvider(packageName)).value;
+    if (bytes == null) return const IconBadge(icon: Icons.android, size: 44);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.memory(bytes, width: 44, height: 44, gaplessPlayback: true),
     );
   }
 }

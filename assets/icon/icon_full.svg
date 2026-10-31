@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><radialGradient id="g" cx="0.7" cy="0.3" r="0.9"><stop offset="0" stop-color="#1A2030"/><stop offset="1" stop-color="#0E1116"/></radialGradient>
+<linearGradient id="zg" x1="0" y1="0" x2="0" y2="1"><stop offset="0.25" stop-color="#C6F432"/><stop offset="0.75" stop-color="#38BDF8"/></linearGradient>
+<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="512" height="512" fill="url(#g)"/><g transform="translate(256,256) scale(0.96) translate(-256,-256)"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="52" filter="url(#glow)">
+<polyline points="170,166 346,166 166,346 342,346" stroke="url(#zg)"/>
+<polyline points="306,118 354,166 306,214" stroke="#C6F432"/>
+<polyline points="206,298 158,346 206,394" stroke="#38BDF8"/>
+</g></g></svg>

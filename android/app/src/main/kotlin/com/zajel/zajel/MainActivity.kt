@@ -5,6 +5,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
@@ -12,7 +14,9 @@ import android.os.Looper
 import android.os.Process
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.util.concurrent.Executors
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 
@@ -141,6 +145,33 @@ private class PlatformApiImpl(
     }
 
     override fun getProcessCpuTimeMs(): Long = Process.getElapsedCpuTime()
+    private val iconExecutor = Executors.newFixedThreadPool(2)
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    override fun getAppIcon(packageName: String, sizePx: Long, callback: (Result<ByteArray?>) -> Unit) {
+        iconExecutor.execute {
+            val bytes = try {
+                renderIcon(packageName, sizePx.toInt().coerceIn(16, 256))
+            } catch (_: Exception) {
+                null
+            }
+            mainHandler.post { callback(Result.success(bytes)) }
+        }
+    }
+
+    /** Draws the app's icon (adaptive icons included) onto a square bitmap. */
+    private fun renderIcon(packageName: String, size: Int): ByteArray {
+        val drawable = context.packageManager.getApplicationIcon(packageName)
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        drawable.setBounds(0, 0, size, size)
+        drawable.draw(Canvas(bitmap))
+        return ByteArrayOutputStream().use {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+            bitmap.recycle()
+            it.toByteArray()
+        }
+    }
+
 
     @Suppress("DEPRECATION")
     override fun listInstalledApps(): List<NativeAppInfo> {

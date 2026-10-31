@@ -49,6 +49,7 @@ dependencies:
   shared_preferences: ^2.5.5
   qr_flutter: ^4.1.0
   qr_code_scanner_plus: ^2.1.2
+  photo_manager: ^3.12.0
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +65,8 @@ dev_dependencies:
   freezed: ^3.2.3
   pigeon: ^26.3.2
   http: ^1.6.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -120,3 +123,24 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: true
+  ios: false # turned on in phase 6
+  image_path: "assets/icon/zajel_icon.png"
+  min_sdk_android: 26
+  adaptive_icon_background: "assets/icon/zajel_background.png"
+  adaptive_icon_foreground: "assets/icon/zajel_foreground.png"
+  adaptive_icon_monochrome: "assets/icon/zajel_monochrome.png"
+
+# A quick native splash: the same dark background as the app, with the logo.
+flutter_native_splash:
+  color: "#0E1116"
+  image: assets/icon/zajel_foreground.png
+  android: true
+  ios: false
+  web: false
+  android_12:
+    color: "#0E1116"
+    image: assets/icon/zajel_foreground.png
+    icon_background_color: "#0E1116"

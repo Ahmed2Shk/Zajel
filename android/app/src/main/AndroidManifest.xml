@@ -10,6 +10,12 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <!-- Android 13+: lets the ongoing-transfer notification show. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Show the user's photos and videos in the picker. Android 14 lets the
+         user share only some of them (VISUAL_USER_SELECTED). Before Android 13
+         the older permission is declared by the media plugin, up to API 32. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"/>
     <!-- Phase 3: QR pairing, hotspot and Wi-Fi Direct. -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>

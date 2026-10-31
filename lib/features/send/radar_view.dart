@@ -82,7 +82,8 @@ class _RadarViewState extends State<RadarView> with SingleTickerProviderStateMix
           clipBehavior: Clip.none,
           children: [
             Positioned.fill(
-              child: AnimatedBuilder(
+              child: RepaintBoundary(
+                child: AnimatedBuilder(
                 animation: _sweep,
                 builder: (context, _) => CustomPaint(
                   painter: _RadarPainter(
@@ -91,6 +92,7 @@ class _RadarViewState extends State<RadarView> with SingleTickerProviderStateMix
                     sweep: _sweep.value,
                     radius: side / 2,
                   ),
+                ),
                 ),
               ),
             ),

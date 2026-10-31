@@ -48,6 +48,11 @@ abstract class PlatformApi {
   /// Apps with a launcher icon, so they can be sent as APK files. Only the
   /// base APK is listed; split APKs are not supported.
   List<NativeAppInfo> listInstalledApps();
+
+  /// The launcher icon of an app as PNG bytes, or null. Drawn on a background
+  /// thread, so a long list of apps can ask for icons as they scroll into view.
+  @async
+  Uint8List? getAppIcon(String packageName, int sizePx);
 }
 /// The Android data path. A TLS server written in Kotlin receives file chunks
 /// straight from the socket onto the disk with `FileChannel`, so file bytes

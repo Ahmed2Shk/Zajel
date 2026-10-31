@@ -62,6 +62,10 @@ void main() {
         'android.permission.CHANGE_NETWORK_STATE',
         'android.permission.ACCESS_FINE_LOCATION',
         'android.permission.NEARBY_WIFI_DEVICES',
+        // Browsing photos and videos in the picker.
+        'android.permission.READ_MEDIA_IMAGES',
+        'android.permission.READ_MEDIA_VIDEO',
+        'android.permission.READ_MEDIA_VISUAL_USER_SELECTED',
       };
       expect(requested.difference(allowed), isEmpty,
           reason: 'unexpected permissions: ${requested.difference(allowed)}');
@@ -69,7 +73,6 @@ void main() {
 
     test('no broad storage, contacts, phone or package-listing permissions', () {
       for (final forbidden in [
-        'READ_EXTERNAL_STORAGE',
         'WRITE_EXTERNAL_STORAGE',
         'MANAGE_EXTERNAL_STORAGE',
         'QUERY_ALL_PACKAGES',
@@ -85,6 +88,12 @@ void main() {
           isFalse,
           reason: forbidden,
         );
+      }
+    });
+
+    test('the old storage permission, if declared, stops at Android 12', () {
+      for (final tag in RegExp(r'<uses-permission[^>]*READ_EXTERNAL_STORAGE[^>]*>').allMatches(manifest)) {
+        expect(tag.group(0), contains('maxSdkVersion="32"'));
       }
     });
 

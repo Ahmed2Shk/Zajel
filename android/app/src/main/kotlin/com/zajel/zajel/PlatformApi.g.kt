@@ -463,6 +463,11 @@ interface PlatformApi {
    * base APK is listed; split APKs are not supported.
    */
   fun listInstalledApps(): List<NativeAppInfo>
+  /**
+   * The launcher icon of an app as PNG bytes, or null. Drawn on a background
+   * thread, so a long list of apps can ask for icons as they scroll into view.
+   */
+  fun getAppIcon(packageName: String, sizePx: Long, callback: (Result<ByteArray?>) -> Unit)
 
   companion object {
     /** The codec used by PlatformApi. */
@@ -582,6 +587,27 @@ interface PlatformApi {
               PlatformApiPigeonUtils.wrapError(exception)
             }
             reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.PlatformApi.getAppIcon$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val packageNameArg = args[0] as String
+            val sizePxArg = args[1] as Long
+            api.getAppIcon(packageNameArg, sizePxArg) { result: Result<ByteArray?> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PlatformApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PlatformApiPigeonUtils.wrapResult(data))
+              }
+            }
           }
         } else {
           channel.setMessageHandler(null)

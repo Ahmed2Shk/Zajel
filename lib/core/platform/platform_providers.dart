@@ -19,3 +19,14 @@ final installedAppsProvider = FutureProvider.autoDispose<List<NativeAppInfo>>((
   if (kIsWeb || !Platform.isAndroid) return const [];
   return ref.watch(platformApiProvider).listInstalledApps();
 });
+
+/// An app's icon as PNG bytes, drawn natively on a background thread and kept
+/// for the session so scrolling back does not draw it again.
+final appIconProvider = FutureProvider.family<Uint8List?, String>((ref, packageName) async {
+  if (kIsWeb || !Platform.isAndroid) return null;
+  try {
+    return await ref.watch(platformApiProvider).getAppIcon(packageName, 96);
+  } catch (_) {
+    return null;
+  }
+});

@@ -172,6 +172,9 @@ void main() {
       final container = await _pump(tester);
       container.read(selectedFilesProvider.notifier).set([file]);
       await _go(tester, container, AppRoutes.filePicker);
+      // The Files tab lists everything selected, from any tab.
+      await tester.tap(find.text('الملفات'));
+      await tester.pump();
 
       expect(find.text('holiday.zip'), findsOneWidget);
       expect(find.textContaining('3.0 MB'), findsWidgets);

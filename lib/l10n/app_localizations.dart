@@ -722,6 +722,60 @@ abstract class AppLocalizations {
   /// **'لا توجد ملفات للتنزيل'**
   String get webPageNoFiles;
 
+  /// No description provided for @mediaDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحتاج إذن الوصول إلى الصور والفيديو لعرضها هنا.'**
+  String get mediaDenied;
+
+  /// No description provided for @mediaAllow.
+  ///
+  /// In ar, this message translates to:
+  /// **'السماح بالوصول'**
+  String get mediaAllow;
+
+  /// No description provided for @mediaOpenSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح الإعدادات'**
+  String get mediaOpenSettings;
+
+  /// No description provided for @mediaLimited.
+  ///
+  /// In ar, this message translates to:
+  /// **'سمحت بجزء من الصور فقط. يمكنك تغيير ذلك من الإعدادات.'**
+  String get mediaLimited;
+
+  /// No description provided for @mediaEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد عناصر'**
+  String get mediaEmpty;
+
+  /// No description provided for @mediaUnsupported.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الصور والفيديو متاح على أندرويد وآيفون فقط. استخدم تبويب الملفات.'**
+  String get mediaUnsupported;
+
+  /// No description provided for @mediaUnreadable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر قراءة هذا الملف'**
+  String get mediaUnreadable;
+
+  /// No description provided for @filesAndroidNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يسمح أندرويد للتطبيقات بعرض كل الملفات تلقائياً. اختر الملفات من مدير الملفات.'**
+  String get filesAndroidNote;
+
+  /// No description provided for @reviewSelection.
+  ///
+  /// In ar, this message translates to:
+  /// **'مراجعة المحدد'**
+  String get reviewSelection;
+
   /// No description provided for @qrShowIntro.
   ///
   /// In ar, this message translates to:
