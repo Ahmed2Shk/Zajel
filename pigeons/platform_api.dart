@@ -23,6 +23,10 @@ abstract class PlatformApi {
   /// [text] are the already-localized notification strings.
   void startTransferService(String title, String text);
   void stopTransferService();
+
+  /// Android 13+: asks for the notification permission (once) so the
+  /// ongoing-transfer notification shows. Transfers work without it.
+  void requestNotificationPermission();
   /// CPU time this process has used so far, in milliseconds.
   int getProcessCpuTimeMs();
 }

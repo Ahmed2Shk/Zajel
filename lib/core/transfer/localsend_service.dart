@@ -57,6 +57,7 @@ class LocalSendService {
       (title: 'Zajel', text: '');
 
   var _activeTransfers = 0;
+  var _askedForNotifications = false;
   StreamSubscription<ReceiveEvent>? _eventsSub;
 
   final _incoming = StreamController<PendingIncoming>.broadcast();
@@ -77,6 +78,7 @@ class LocalSendService {
     DeviceType deviceType = DeviceType.mobile,
     PlatformApi? platform,
     NativeDataBridge? nativeData,
+    String? pin,
     int port = localSendDefaultPort,
   }) async {
     final device = DeviceInfo(
@@ -94,6 +96,7 @@ class LocalSendService {
       device: device,
       downloadDirectory: downloadDirectory,
       nativeData: nativeData,
+      pin: pin,
       onIncoming: (transfer) => service._askUser(transfer),
       onDeviceRegistered: (peer, address) =>
           service._remember(DiscoveredDevice(peer, address)),
@@ -131,6 +134,12 @@ class LocalSendService {
   Future<void> beginTransfer() async {
     if (_activeTransfers++ > 0) return;
     final (:title, :text) = notificationText();
+    if (!_askedForNotifications) {
+      _askedForNotifications = true;
+      try {
+        await _platform?.requestNotificationPermission();
+      } catch (_) {}
+    }
     try {
       await _platform?.startTransferService(title, text);
     } catch (_) {}

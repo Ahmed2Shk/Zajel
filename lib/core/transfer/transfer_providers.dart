@@ -20,6 +20,17 @@ import 'send_client.dart';
 final localSendServiceProvider = FutureProvider<LocalSendService?>((ref) async {
   if (kIsWeb) return null;
 
+  // Changing any of these restarts the service with the new values.
+  final (:deviceName, :downloadPath, :receivePin) = ref.watch(
+    appSettingsProvider.select(
+      (s) => (
+        deviceName: s.deviceName,
+        downloadPath: s.downloadPath,
+        receivePin: s.receivePin,
+      ),
+    ),
+  );
+
   final support = await getApplicationSupportDirectory();
   final identity = await DeviceIdentity.loadOrCreate(support);
   final platform = Platform.isAndroid ? PlatformApi() : null;
@@ -33,12 +44,15 @@ final localSendServiceProvider = FutureProvider<LocalSendService?>((ref) async {
 
   final service = await LocalSendService.start(
     identity: identity,
-    alias: 'Zajel-${identity.fingerprint.substring(0, 4)}',
+    alias: deviceName ?? defaultDeviceName(identity),
+    pin: receivePin,
     deviceModel: model,
     deviceType: Platform.isAndroid || Platform.isIOS
         ? DeviceType.mobile
         : DeviceType.desktop,
-    downloadDirectory: await _downloadDirectory(),
+    downloadDirectory: downloadPath != null
+        ? Directory(downloadPath)
+        : await defaultDownloadDirectory(),
     platform: platform,
     nativeData: Platform.isAndroid ? PigeonNativeDataBridge() : null,
   );
@@ -50,10 +64,13 @@ final localSendServiceProvider = FutureProvider<LocalSendService?>((ref) async {
   return service;
 });
 
+String defaultDeviceName(DeviceIdentity identity) =>
+    'Zajel-${identity.fingerprint.substring(0, 4)}';
+
 /// Files land in a "Zajel" folder. On Android this is the app's own external
 /// folder, which needs no storage permission; a public Downloads location
 /// arrives with the Android release phase.
-Future<Directory> _downloadDirectory() async {
+Future<Directory> defaultDownloadDirectory() async {
   final base =
       await getDownloadsDirectory() ??
       await getExternalStorageDirectory() ??

@@ -270,6 +270,26 @@ class PlatformApi {
     ;
   }
 
+  /// Android 13+: asks for the notification permission (once) so the
+  /// ongoing-transfer notification shows. Transfers work without it.
+  Future<void> requestNotificationPermission() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.PlatformApi.requestNotificationPermission$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
+
   /// CPU time this process has used so far, in milliseconds.
   Future<int> getProcessCpuTimeMs() async {
     final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.PlatformApi.getProcessCpuTimeMs$pigeonVar_messageChannelSuffix';

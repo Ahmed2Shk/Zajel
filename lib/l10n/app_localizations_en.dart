@@ -174,6 +174,32 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get defaultValue => 'Default';
+
+  @override
+  String get editDeviceName => 'Edit device name';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get chooseFolder => 'Choose folder';
+
+  @override
+  String get downloadFolderFixed =>
+      'On Android, files are saved in the app\'s folder.';
+
+  @override
+  String get pinNotSet => 'No PIN';
+
+  @override
+  String get pinDialogHint =>
+      '4 to 8 digits. The sending device must enter it before any file is sent.';
+
+  @override
+  String get clearPin => 'Remove PIN';
+
+  @override
   String get transferNotification => 'Transferring files…';
 
   @override

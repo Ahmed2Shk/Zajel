@@ -269,6 +269,11 @@ interface PlatformApi {
    */
   fun startTransferService(title: String, text: String)
   fun stopTransferService()
+  /**
+   * Android 13+: asks for the notification permission (once) so the
+   * ongoing-transfer notification shows. Transfers work without it.
+   */
+  fun requestNotificationPermission()
   /** CPU time this process has used so far, in milliseconds. */
   fun getProcessCpuTimeMs(): Long
 
@@ -339,6 +344,22 @@ interface PlatformApi {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
               api.stopTransferService()
+              listOf(null)
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.PlatformApi.requestNotificationPermission$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.requestNotificationPermission()
               listOf(null)
             } catch (exception: Throwable) {
               PlatformApiPigeonUtils.wrapError(exception)

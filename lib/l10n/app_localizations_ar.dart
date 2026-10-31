@@ -174,6 +174,32 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get defaultValue => 'الافتراضي';
+
+  @override
+  String get editDeviceName => 'تعديل اسم الجهاز';
+
+  @override
+  String get save => 'حفظ';
+
+  @override
+  String get chooseFolder => 'اختيار مجلد';
+
+  @override
+  String get downloadFolderFixed =>
+      'على أندرويد تُحفظ الملفات في مجلد التطبيق.';
+
+  @override
+  String get pinNotSet => 'بدون رمز';
+
+  @override
+  String get pinDialogHint =>
+      'من 4 إلى 8 أرقام. يُطلب من الجهاز المرسل قبل إرسال أي ملف.';
+
+  @override
+  String get clearPin => 'إزالة الرمز';
+
+  @override
   String get transferNotification => 'جاري نقل الملفات…';
 
   @override

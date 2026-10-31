@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zajel/core/transfer/transfer_providers.dart';
 import 'package:zajel/app.dart';
 import 'package:zajel/core/router/app_router.dart';
 import 'package:zajel/features/settings/app_settings.dart';
 
 Future<ProviderContainer> _pumpApp(WidgetTester tester) async {
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
   // No sockets in widget tests: the LAN service is replaced by nothing.
   final container = ProviderContainer(
-    overrides: [localSendServiceProvider.overrideWith((ref) async => null)],
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      localSendServiceProvider.overrideWith((ref) async => null),
+    ],
   );
   addTearDown(container.dispose);
   await tester.pumpWidget(

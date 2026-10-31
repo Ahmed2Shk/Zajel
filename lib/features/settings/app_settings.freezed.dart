@@ -14,7 +14,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppSettings {
 
- ThemeMode get themeMode; Locale get locale;
+ ThemeMode get themeMode; Locale get locale;/// Null means "use the default name derived from the device fingerprint".
+ String? get deviceName;/// Null means the platform default folder. Android keeps the app folder.
+ String? get downloadPath;/// Optional PIN senders must enter (4-8 digits). Null means no PIN.
+ String? get receivePin;
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +28,16 @@ $AppSettingsCopyWith<AppSettings> get copyWith => _$AppSettingsCopyWithImpl<AppS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppSettings&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.locale, locale) || other.locale == locale));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppSettings&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.locale, locale) || other.locale == locale)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.downloadPath, downloadPath) || other.downloadPath == downloadPath)&&(identical(other.receivePin, receivePin) || other.receivePin == receivePin));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,themeMode,locale);
+int get hashCode => Object.hash(runtimeType,themeMode,locale,deviceName,downloadPath,receivePin);
 
 @override
 String toString() {
-  return 'AppSettings(themeMode: $themeMode, locale: $locale)';
+  return 'AppSettings(themeMode: $themeMode, locale: $locale, deviceName: $deviceName, downloadPath: $downloadPath, receivePin: $receivePin)';
 }
 
 
@@ -45,7 +48,7 @@ abstract mixin class $AppSettingsCopyWith<$Res>  {
   factory $AppSettingsCopyWith(AppSettings value, $Res Function(AppSettings) _then) = _$AppSettingsCopyWithImpl;
 @useResult
 $Res call({
- ThemeMode themeMode, Locale locale
+ ThemeMode themeMode, Locale locale, String? deviceName, String? downloadPath, String? receivePin
 });
 
 
@@ -62,11 +65,14 @@ class _$AppSettingsCopyWithImpl<$Res>
 
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? themeMode = null,Object? locale = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? themeMode = null,Object? locale = null,Object? deviceName = freezed,Object? downloadPath = freezed,Object? receivePin = freezed,}) {
   return _then(_self.copyWith(
 themeMode: null == themeMode ? _self.themeMode : themeMode // ignore: cast_nullable_to_non_nullable
 as ThemeMode,locale: null == locale ? _self.locale : locale // ignore: cast_nullable_to_non_nullable
-as Locale,
+as Locale,deviceName: freezed == deviceName ? _self.deviceName : deviceName // ignore: cast_nullable_to_non_nullable
+as String?,downloadPath: freezed == downloadPath ? _self.downloadPath : downloadPath // ignore: cast_nullable_to_non_nullable
+as String?,receivePin: freezed == receivePin ? _self.receivePin : receivePin // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -151,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ThemeMode themeMode,  Locale locale)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ThemeMode themeMode,  Locale locale,  String? deviceName,  String? downloadPath,  String? receivePin)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppSettings() when $default != null:
-return $default(_that.themeMode,_that.locale);case _:
+return $default(_that.themeMode,_that.locale,_that.deviceName,_that.downloadPath,_that.receivePin);case _:
   return orElse();
 
 }
@@ -172,10 +178,10 @@ return $default(_that.themeMode,_that.locale);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ThemeMode themeMode,  Locale locale)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ThemeMode themeMode,  Locale locale,  String? deviceName,  String? downloadPath,  String? receivePin)  $default,) {final _that = this;
 switch (_that) {
 case _AppSettings():
-return $default(_that.themeMode,_that.locale);case _:
+return $default(_that.themeMode,_that.locale,_that.deviceName,_that.downloadPath,_that.receivePin);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -192,10 +198,10 @@ return $default(_that.themeMode,_that.locale);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ThemeMode themeMode,  Locale locale)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ThemeMode themeMode,  Locale locale,  String? deviceName,  String? downloadPath,  String? receivePin)?  $default,) {final _that = this;
 switch (_that) {
 case _AppSettings() when $default != null:
-return $default(_that.themeMode,_that.locale);case _:
+return $default(_that.themeMode,_that.locale,_that.deviceName,_that.downloadPath,_that.receivePin);case _:
   return null;
 
 }
@@ -207,11 +213,17 @@ return $default(_that.themeMode,_that.locale);case _:
 
 
 class _AppSettings implements AppSettings {
-  const _AppSettings({this.themeMode = ThemeMode.dark, this.locale = const Locale('ar')});
+  const _AppSettings({this.themeMode = ThemeMode.dark, this.locale = const Locale('ar'), this.deviceName, this.downloadPath, this.receivePin});
   
 
 @override@JsonKey() final  ThemeMode themeMode;
 @override@JsonKey() final  Locale locale;
+/// Null means "use the default name derived from the device fingerprint".
+@override final  String? deviceName;
+/// Null means the platform default folder. Android keeps the app folder.
+@override final  String? downloadPath;
+/// Optional PIN senders must enter (4-8 digits). Null means no PIN.
+@override final  String? receivePin;
 
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
@@ -223,16 +235,16 @@ _$AppSettingsCopyWith<_AppSettings> get copyWith => __$AppSettingsCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppSettings&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.locale, locale) || other.locale == locale));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppSettings&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.locale, locale) || other.locale == locale)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.downloadPath, downloadPath) || other.downloadPath == downloadPath)&&(identical(other.receivePin, receivePin) || other.receivePin == receivePin));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,themeMode,locale);
+int get hashCode => Object.hash(runtimeType,themeMode,locale,deviceName,downloadPath,receivePin);
 
 @override
 String toString() {
-  return 'AppSettings(themeMode: $themeMode, locale: $locale)';
+  return 'AppSettings(themeMode: $themeMode, locale: $locale, deviceName: $deviceName, downloadPath: $downloadPath, receivePin: $receivePin)';
 }
 
 
@@ -243,7 +255,7 @@ abstract mixin class _$AppSettingsCopyWith<$Res> implements $AppSettingsCopyWith
   factory _$AppSettingsCopyWith(_AppSettings value, $Res Function(_AppSettings) _then) = __$AppSettingsCopyWithImpl;
 @override @useResult
 $Res call({
- ThemeMode themeMode, Locale locale
+ ThemeMode themeMode, Locale locale, String? deviceName, String? downloadPath, String? receivePin
 });
 
 
@@ -260,11 +272,14 @@ class __$AppSettingsCopyWithImpl<$Res>
 
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? themeMode = null,Object? locale = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? themeMode = null,Object? locale = null,Object? deviceName = freezed,Object? downloadPath = freezed,Object? receivePin = freezed,}) {
   return _then(_AppSettings(
 themeMode: null == themeMode ? _self.themeMode : themeMode // ignore: cast_nullable_to_non_nullable
 as ThemeMode,locale: null == locale ? _self.locale : locale // ignore: cast_nullable_to_non_nullable
-as Locale,
+as Locale,deviceName: freezed == deviceName ? _self.deviceName : deviceName // ignore: cast_nullable_to_non_nullable
+as String?,downloadPath: freezed == downloadPath ? _self.downloadPath : downloadPath // ignore: cast_nullable_to_non_nullable
+as String?,receivePin: freezed == receivePin ? _self.receivePin : receivePin // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

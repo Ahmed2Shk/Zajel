@@ -410,6 +410,54 @@ abstract class AppLocalizations {
   /// **'الإرسال إلى {name}'**
   String sendingTo(String name);
 
+  /// No description provided for @defaultValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'الافتراضي'**
+  String get defaultValue;
+
+  /// No description provided for @editDeviceName.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل اسم الجهاز'**
+  String get editDeviceName;
+
+  /// No description provided for @save.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get save;
+
+  /// No description provided for @chooseFolder.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار مجلد'**
+  String get chooseFolder;
+
+  /// No description provided for @downloadFolderFixed.
+  ///
+  /// In ar, this message translates to:
+  /// **'على أندرويد تُحفظ الملفات في مجلد التطبيق.'**
+  String get downloadFolderFixed;
+
+  /// No description provided for @pinNotSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون رمز'**
+  String get pinNotSet;
+
+  /// No description provided for @pinDialogHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'من 4 إلى 8 أرقام. يُطلب من الجهاز المرسل قبل إرسال أي ملف.'**
+  String get pinDialogHint;
+
+  /// No description provided for @clearPin.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة الرمز'**
+  String get clearPin;
+
   /// No description provided for @transferNotification.
   ///
   /// In ar, this message translates to:

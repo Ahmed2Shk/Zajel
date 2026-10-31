@@ -46,6 +46,9 @@ dependencies:
   file_picker: ^13.3.0
   path: ^1.9.1
   mime: ^2.1.0
+  shared_preferences: ^2.5.5
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.4.3
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +76,19 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   generate: true
+
+  # Bundled fonts (SIL OFL): the app works fully offline, so nothing is fetched.
+  fonts:
+    - family: IBMPlexSansArabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
+        - asset: assets/fonts/IBMPlexSansArabic-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
+          weight: 700
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:
