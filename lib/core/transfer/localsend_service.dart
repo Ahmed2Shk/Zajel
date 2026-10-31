@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import '../discovery/multicast_discovery.dart';
+import '../logging/app_log.dart';
 import '../platform/native_data_bridge.dart';
 import '../platform/platform_api.g.dart';
 import '../security/device_identity.dart';
@@ -60,6 +61,7 @@ class LocalSendService {
 
   var _activeTransfers = 0;
   var _askedForNotifications = false;
+  AppLog? _log;
   WebShareServer? _webShare;
   ReceiveServer? _webReceiver;
   StreamSubscription<ReceiveEvent>? _eventsSub;
@@ -83,6 +85,7 @@ class LocalSendService {
     PlatformApi? platform,
     NativeDataBridge? nativeData,
     String? pin,
+    AppLog? log,
     int port = localSendDefaultPort,
   }) async {
     final device = DeviceInfo(
@@ -101,6 +104,7 @@ class LocalSendService {
       downloadDirectory: downloadDirectory,
       nativeData: nativeData,
       pin: pin,
+      onError: log == null ? null : (e, st) => log.error('receive', e, st),
       onIncoming: (transfer) => service._askUser(transfer),
       onDeviceRegistered: (peer, address) =>
           service._remember(DiscoveredDevice(peer, address)),
@@ -114,7 +118,9 @@ class LocalSendService {
       platform: platform,
     );
 
+    service._log = log;
     await service._begin(port);
+    log?.info('service', 'started as ${device.alias} on port $port');
     return service;
   }
 
@@ -126,8 +132,17 @@ class LocalSendService {
     } catch (_) {}
     await _server.start(port: port);
     _eventsSub = _server.events.listen((event) {
-      if (event is SessionStarted) beginTransfer();
-      if (event is SessionEnded) endTransfer();
+      if (event is SessionStarted) {
+        _log?.info(
+          'receive',
+          'incoming session: ${event.transfer.files.length} files, ${event.transfer.totalBytes} bytes',
+        );
+        beginTransfer();
+      }
+      if (event is SessionEnded) {
+        _log?.info('receive', event.cancelled ? 'session cancelled' : 'session finished');
+        endTransfer();
+      }
     });
     _discoverySub = _discovery.devices.listen(_remember);
     await _discovery.start();

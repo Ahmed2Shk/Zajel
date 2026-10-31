@@ -135,6 +135,7 @@ class ReceiveServer {
     this.enableChunking = true,
     this.sessionIdleTimeout = const Duration(minutes: 2),
     this.nativeData,
+    this.onError,
   });
 
   final DeviceIdentity identity;
@@ -153,6 +154,9 @@ class ReceiveServer {
 
   /// Android only: the Kotlin data server that writes chunks to disk.
   final NativeDataBridge? nativeData;
+
+  /// Called with unexpected errors (not the expected 4xx answers), for logging.
+  final void Function(Object error, StackTrace stack)? onError;
   int? _dataPort;
 
   /// A session with no traffic for this long is dropped, so a sender that
@@ -249,7 +253,8 @@ class ReceiveServer {
       await _empty(request, 400, message: e.toString());
     } on UnsafeFileNameException catch (e) {
       await _empty(request, 400, message: e.toString());
-    } catch (_) {
+    } catch (e, stack) {
+      onError?.call(e, stack);
       try {
         await _empty(request, 500);
       } catch (_) {

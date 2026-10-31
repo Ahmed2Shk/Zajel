@@ -722,6 +722,42 @@ abstract class AppLocalizations {
   /// **'لا توجد ملفات للتنزيل'**
   String get webPageNoFiles;
 
+  /// No description provided for @exportLogs.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصدير السجل'**
+  String get exportLogs;
+
+  /// No description provided for @exportLogsSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف نصي محلي بدون أسماء ملفات أو رموز أو بيانات شخصية. يُحفظ حيث تختار.'**
+  String get exportLogsSub;
+
+  /// No description provided for @clearLogs.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح السجل'**
+  String get clearLogs;
+
+  /// No description provided for @logsSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ السجل'**
+  String get logsSaved;
+
+  /// No description provided for @logsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'السجل فارغ'**
+  String get logsEmpty;
+
+  /// No description provided for @logsExportFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حفظ السجل'**
+  String get logsExportFailed;
+
   /// No description provided for @defaultValue.
   ///
   /// In ar, this message translates to:

@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../features/settings/app_settings.dart';
 import '../../l10n/app_localizations.dart';
 import '../discovery/multicast_discovery.dart';
+import '../logging/log_providers.dart';
 import '../platform/native_data_bridge.dart';
 import '../platform/platform_api.g.dart';
 import '../security/device_identity.dart';
@@ -47,6 +48,7 @@ final localSendServiceProvider = FutureProvider<LocalSendService?>((ref) async {
     identity: identity,
     alias: deviceName ?? defaultDeviceName(identity),
     pin: receivePin,
+    log: ref.read(appLogProvider),
     deviceModel: model,
     deviceType: Platform.isAndroid || Platform.isIOS
         ? DeviceType.mobile
@@ -226,12 +228,14 @@ class SendJobNotifier extends Notifier<SendJob> {
       );
     } on SendException catch (e) {
       if (_cancelled) return;
+      ref.read(appLogProvider)?.error('send', e);
       state = state.copyWith(
         status: e.pinRequired ? SendStatus.needsPin : SendStatus.failed,
         error: e.declined ? 'declined' : e.message,
       );
-    } catch (e) {
+    } catch (e, stack) {
       if (_cancelled) return;
+      ref.read(appLogProvider)?.error('send', e, stack);
       state = state.copyWith(status: SendStatus.failed, error: e.toString());
     } finally {
       await service.endTransfer();

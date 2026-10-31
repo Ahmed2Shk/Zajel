@@ -351,6 +351,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get webPageNoFiles => 'No files to download';
 
   @override
+  String get exportLogs => 'Export log';
+
+  @override
+  String get exportLogsSub =>
+      'A local text file with no file names, tokens or personal data. Saved where you choose.';
+
+  @override
+  String get clearLogs => 'Clear log';
+
+  @override
+  String get logsSaved => 'Log saved';
+
+  @override
+  String get logsEmpty => 'The log is empty';
+
+  @override
+  String get logsExportFailed => 'Could not save the log';
+
+  @override
   String get defaultValue => 'Default';
 
   @override

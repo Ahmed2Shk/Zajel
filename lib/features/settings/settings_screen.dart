@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -7,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/logging/app_log.dart';
+import '../../core/logging/log_providers.dart';
 import '../../core/platform/platform_providers.dart';
 import '../../core/router/app_router.dart';
 import '../../core/transfer/transfer_providers.dart';
@@ -63,6 +66,32 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     ).whenComplete(controller.dispose);
+  }
+
+  /// Saves the log where the user chooses. Nothing is uploaded.
+  Future<void> _exportLogs(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final log = ref.read(appLogProvider);
+    final body = log?.readAll() ?? '';
+    if (body.isEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.logsEmpty)));
+      return;
+    }
+    final text =
+        '${AppLog.environmentSummary(locale: ref.read(appSettingsProvider).locale.languageCode)}\n$body';
+    try {
+      final saved = await FilePicker.saveFile(
+        fileName: 'zajel-log.txt',
+        bytes: Uint8List.fromList(utf8.encode(text)),
+        mimeType: 'text/plain',
+      );
+      if (saved != null) {
+        messenger.showSnackBar(SnackBar(content: Text(l10n.logsSaved)));
+      }
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.logsExportFailed)));
+    }
   }
 
   @override
@@ -171,6 +200,25 @@ class SettingsScreen extends ConsumerWidget {
                   );
                   if (pin != null) notifier.setReceivePin(pin);
                 },
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.description_outlined),
+                title: Text(l10n.exportLogs),
+                subtitle: Text(l10n.exportLogsSub),
+                onTap: () => _exportLogs(context, ref),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: l10n.clearLogs,
+                  onPressed: () {
+                    ref.read(appLogProvider)?.clear();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.logsEmpty)),
+                    );
+                  },
+                ),
               ),
             ),
             const SizedBox(height: 12),

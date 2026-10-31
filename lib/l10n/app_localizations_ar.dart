@@ -350,6 +350,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get webPageNoFiles => 'لا توجد ملفات للتنزيل';
 
   @override
+  String get exportLogs => 'تصدير السجل';
+
+  @override
+  String get exportLogsSub =>
+      'ملف نصي محلي بدون أسماء ملفات أو رموز أو بيانات شخصية. يُحفظ حيث تختار.';
+
+  @override
+  String get clearLogs => 'مسح السجل';
+
+  @override
+  String get logsSaved => 'تم حفظ السجل';
+
+  @override
+  String get logsEmpty => 'السجل فارغ';
+
+  @override
+  String get logsExportFailed => 'تعذّر حفظ السجل';
+
+  @override
   String get defaultValue => 'الافتراضي';
 
   @override
