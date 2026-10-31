@@ -1,0 +1,5 @@
+tags:
+  slow:
+    timeout: 10m
+  network:
+    timeout: 1m

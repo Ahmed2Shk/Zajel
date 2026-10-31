@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="dark" dir="rtl" lang="ar"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@400;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#111319;}body{overscroll-behavior:none;font-family:'IBM Plex Sans Arabic','IBM Plex Sans',sans-serif;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-secondary": "#00354a", "surface-variant": "#32353a", "on-tertiary": "#003915", "outline": "#8e937a", "on-error-container": "#ffdad6", "on-tertiary-container": "#007432", "surface-container-low": "#191c21", "on-secondary-fixed": "#001e2c", "on-surface": "#e1e2e9", "on-surface-variant": "#c4c9ae", "error": "#ffb4ab", "surface": "#111319", "secondary-fixed-dim": "#7bd0ff", "on-error": "#690005", "secondary": "#7bd0ff", "on-tertiary-fixed": "#002109", "surface-container": "#1d2025", "surface-container-highest": "#32353a", "primary-fixed": "#c5f331", "surface-bright": "#36393f", "surface-dim": "#111319", "inverse-on-surface": "#2e3036", "tertiary": "#ffffff", "secondary-container": "#00a6e0", "on-background": "#e1e2e9", "secondary-fixed": "#c4e7ff", "outline-variant": "#444934", "tertiary-container": "#6bff8f", "inverse-surface": "#e1e2e9", "background": "#111319", "on-secondary-container": "#00374d", "on-primary-fixed": "#161f00", "on-primary": "#283500", "tertiary-fixed-dim": "#4ae176", "tertiary-fixed": "#6bff8f", "primary": "#ffffff", "surface-tint": "#aad600", "inverse-primary": "#506600", "primary-container": "#c5f331", "on-tertiary-fixed-variant": "#005321", "on-secondary-fixed-variant": "#004c69", "surface-container-high": "#272a30", "surface-container-lowest": "#0b0e13", "on-primary-fixed-variant": "#3b4d00", "primary-fixed-dim": "#aad600", "on-primary-container": "#556d00", "error-container": "#93000a" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-xl": "2rem", "gutter": "1rem", "space-lg": "1.5rem", "margin": "1.25rem", "space-xs": "0.25rem", "space-md": "1rem", "space-sm": "0.5rem" }, "fontFamily": { "body-lg": ["IBM Plex Sans"], "label-numeric": ["Inter"], "body-md": ["IBM Plex Sans"], "headline-md": ["IBM Plex Sans"], "label-transfer-speed": ["Inter"], "display-hero": ["IBM Plex Sans"], "label-code": ["Inter"], "headline-lg": ["IBM Plex Sans"], "body-sm": ["IBM Plex Sans"], "headline-sm": ["IBM Plex Sans"], "display-hero-mobile": ["IBM Plex Sans"] }, "fontSize": { "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }], "label-numeric": ["13px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }], "headline-md": ["22px", { "lineHeight": "30px", "fontWeight": "600" }], "label-transfer-speed": ["20px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "display-hero": ["44px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-code": ["15px", { "lineHeight": "20px", "fontWeight": "500" }], "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }], "headline-sm": ["18px", { "lineHeight": "26px", "fontWeight": "600" }], "display-hero-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.25)]"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Zajel Carrier Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzc13qBqRepPkrr9ObNJMdgGh4PEHYkaLEuhMMr_xt0GHT3mZXA1hReiiCkIDDIZ4FEPCnl8wW2jMpoA3MrZ14Tuve6DHpbSSlGcAdU1ZBWoRavwj8rAbzLaTWaEJUajxwSA22-GYBo6QlKgoxWxYdYrjvI0N5aiBF4E0aFE7uVgNtRHsl_Topp7TWAGM7g_ed8wpsO-Mqs2tHx_JozEOryuU74WUFGa1HpvfHJfZp"/><div class="flex items-center gap-1.5"><span class="font-headline-sm text-headline-sm font-bold text-on-surface tracking-tight">زاجل</span><span class="font-label-code text-body-sm px-2 py-0.5 rounded-full bg-surface-container-high text-secondary font-semibold tracking-wide">ZAJEL</span></div><div class="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full bg-surface-container-low text-tertiary-fixed-dim"><span class="w-2 h-2 rounded-full bg-tertiary-fixed animate-pulse"></span><span class="font-label-numeric text-body-sm font-medium">P2P Ready</span></div></div><div class="flex items-center gap-space-md"><div class="flex flex-col items-end text-left"><span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Files</span><span class="font-label-numeric text-body-sm text-on-surface-variant flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>متصل محلياً</span></div><div class="relative flex items-center justify-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWm1bzaEVwwrCGt5sPUolcKI3rJsrCxX2VVWNgy_QgihbsiNP6AJTPP9a6fT3N9U4IfPFczoZ6zpwS6r3tSv1n-5No_LFPo98mAbhDpYdosVe-7TNHuycGMzGTvKUKEClzT8YBQ0FFm76s1qqbJ_UhDL-qxkPeUKq-vjLsUC7z9tw7pbxADin_jOw3z7pzOlPCS6VLcfxndQ0R6kU6aSnSC3O4qOoZVNvBbwzCRF5s"/><span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-tertiary-fixed rounded-full ring-2 ring-surface"></span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-28 bg-surface min-h-screen"><div class="flex flex-col w-full px-margin pb-32 space-y-space-md" dir="rtl">
+<!-- Storage Telemetry Banner -->
+<div class="w-full bg-surface-container-low rounded-xl p-space-md shadow-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-[20px]">hard_drive</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">مساحة التخزين المتوفرة</span>
+</div>
+<span class="font-label-numeric text-label-numeric text-primary-container">48.2 GB / 128 GB</span>
+</div>
+<!-- Linear Storage Gauge -->
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden flex flex-row-reverse mt-1">
+<div class="h-full bg-primary-container rounded-full" style="width: 62.3%;"></div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm mt-0.5">
+<span>متبقي 79.8 جيجابايت</span>
+<span class="font-label-code text-body-sm text-secondary">62% مستخدم</span>
+</div>
+</div>
+<!-- Real-time Tactical Search Input -->
+<div class="relative w-full">
+<div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="w-full bg-surface-container-low text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md rounded-xl py-3 pr-10 pl-10 shadow-sm focus:outline-none focus:bg-surface-container transition-all" placeholder="البحث في الملفات والتطبيقات..." type="text"/>
+<button class="absolute inset-y-0 left-0 flex items-center pl-3 text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+<!-- Horizontal Segmented Category Navigation -->
+<div class="w-full overflow-x-auto no-scrollbar py-0.5">
+<div class="flex items-center gap-space-xs min-w-max">
+<!-- Active Pill -->
+<button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary-container text-on-primary-container font-label-numeric text-label-numeric shadow-sm transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">image</span>
+<span class="font-body-md text-body-md font-semibold">الصور</span>
+<span class="bg-on-primary-container/15 px-1.5 py-0.5 rounded-full text-body-sm font-label-numeric">1,420</span>
+</button>
+<button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-numeric text-label-numeric shadow-sm transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[18px]">videocam</span>
+<span class="font-body-md text-body-md font-medium">الفيديو</span>
+<span class="bg-surface-variant px-1.5 py-0.5 rounded-full text-body-sm font-label-numeric">84</span>
+</button>
+<button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-numeric text-label-numeric shadow-sm transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[18px]">apk_install</span>
+<span class="font-body-md text-body-md font-medium">التطبيقات</span>
+<span class="bg-surface-variant px-1.5 py-0.5 rounded-full text-body-sm font-label-numeric">26</span>
+</button>
+<button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-numeric text-label-numeric shadow-sm transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span class="font-body-md text-body-md font-medium">المستندات</span>
+<span class="bg-surface-variant px-1.5 py-0.5 rounded-full text-body-sm font-label-numeric">310</span>
+</button>
+<button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-numeric text-label-numeric shadow-sm transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[18px]">audio_file</span>
+<span class="font-body-md text-body-md font-medium">الصوتيات</span>
+<span class="bg-surface-variant px-1.5 py-0.5 rounded-full text-body-sm font-label-numeric">55</span>
+</button>
+</div>
+</div>
+<!-- Multi-select Action Controller Toolbar -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">الوسائط الحديثة</span>
+<span class="font-label-code text-body-sm px-2 py-0.5 rounded-full bg-surface-container-high text-primary-container font-semibold">4 محددة</span>
+</div>
+<div class="flex items-center gap-space-xs font-body-sm text-body-sm">
+<button class="px-2.5 py-1 rounded-lg bg-surface-container-low text-primary-container font-medium hover:bg-surface-container transition-colors">تحديد الكل</button>
+<button class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors">إلغاء التحديد</button>
+</div>
+</div>
+<!-- Visual Photos Gallery Section (3-Column Mosaic) -->
+<div class="grid grid-cols-3 gap-2 w-full">
+<!-- Selected Item 1 -->
+<div class="relative aspect-square rounded-xl overflow-hidden bg-surface-container-high shadow-md group cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="A vivid high-definition night photograph of Riyadh modern skyscrapers illuminated with bright cyan and lime neon beams, dynamic angle, crisp details" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3tKlrNIVgdemzwziAheG6N6uf8MK1uoaRx1bXzyWuWFwXipETZEVqKEdzgA8fDfYZ77Gm6pO6E-Qy_7HFKeQURfmGskc5VdC6A3fyfWmOCQDVQfNHLjHqboX33saiedwUkHDOjZWoZCAIUsM6rWlue26_l-F8D45kM850yOZYZixwJCNqXMinrllSCmLO-7vY-qBsatQegvEw0__ZBKrH786-fJ7TQkB8wsUS6sej"/>
+<div class="absolute inset-0 bg-primary-container/20 backdrop-blur-[1px]"></div>
+<div class="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+<span class="absolute bottom-1.5 left-1.5 font-label-numeric text-body-sm px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-on-surface">3.8 MB</span>
+</div>
+<!-- Selected Item 2 -->
+<div class="relative aspect-square rounded-xl overflow-hidden bg-surface-container-high shadow-md group cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="Futuristic electronic hardware circuit board glowing with electric green diodes and cyber blue data channels, macro view, rich darkroom lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2WuH269JK5-OU7BF6UaDDxaI5alaf-0LhuOb_-_Ee84njcedIqINnIn9HhiJy4Q5ABFfo2iAJVRKAFekO3cZm8BwoF6EC5MCcEa_EyWZFGgN-7Ly1HGScUMbjeN0BlwZ6PAaas11I0lr_-ItTK-mgc7PScFiMmAEvWXkHgAbsZgYnoV5QyWCOy91q8JOXgk68ArE0876X60f9fPB7_DbuqYyXrrnfJa7022kmUFbU"/>
+<div class="absolute inset-0 bg-primary-container/20 backdrop-blur-[1px]"></div>
+<div class="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+<span class="absolute bottom-1.5 left-1.5 font-label-numeric text-body-sm px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-on-surface">5.2 MB</span>
+</div>
+<!-- Selected Item 3 -->
+<div class="relative aspect-square rounded-xl overflow-hidden bg-surface-container-high shadow-md group cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="Minimalist architectural geometric shadows on a sand-colored textured wall during sunset, golden hour light, high contrast aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPFamDwKkdFTyTGscCNMdyKNUwhy_fOKF1-TA0VZDfunjs0sbuCPffB5GpCoSfRWnt5tOhPpWkx2x5mfyMRWg-NLOtkPkCzaf-z-UTRUB3WgJMeUHWmCx2cGqu1DxHoiywi4B7jEq_ig0eIcE-RAgAh8x2z6xaUGwBZi-oRcFVZeEM8_h8vrepFYqIvw8qu89JYpEGhUuHSsvvX872FoqEWKmQzKDgR2-D0IHBYvUh"/>
+<div class="absolute inset-0 bg-primary-container/20 backdrop-blur-[1px]"></div>
+<div class="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+<span class="absolute bottom-1.5 left-1.5 font-label-numeric text-body-sm px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-on-surface">2.4 MB</span>
+</div>
+<!-- Unselected Item 4 -->
+<div class="relative aspect-square rounded-xl overflow-hidden bg-surface-container-high shadow-sm group cursor-pointer">
+<img class="w-full h-full object-cover opacity-85 hover:opacity-100 transition-opacity" data-alt="Modern high speed train passing through a futuristic desert landscape with sleek glass panels, motion blur, daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkPl51Kj_sd52NKYPERl59iaEIrZ2NSU09bf8sHerpfZau59hquqXOfsHufv1fYGnprvL3kkkijCXQs6BO078l8XWxppvv3pn7TVb5DMkz2XsQcJm9fi7_yDr8zlwTqj57y1UZ9l2cUWYikLMOKMfX8XMbq2OQ8TWQea9Oep21D0VE3D5dorfktVBvaCXb9TKseGouc4P0Oa0VV9PH1X5gHR29H-CSJuEx7ZuE6qWa"/>
+<div class="absolute top-2 right-2 w-6 h-6 rounded-full bg-surface-container-lowest/70 backdrop-blur-md flex items-center justify-center text-on-surface-variant">
+<span class="w-2.5 h-2.5 rounded-full bg-surface-variant"></span>
+</div>
+<span class="absolute bottom-1.5 left-1.5 font-label-numeric text-body-sm px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-on-surface">4.1 MB</span>
+</div>
+<!-- Unselected Item 5 -->
+<div class="relative aspect-square rounded-xl overflow-hidden bg-surface-container-high shadow-sm group cursor-pointer">
+<img class="w-full h-full object-cover opacity-85 hover:opacity-100 transition-opacity" data-alt="Abstract dynamic fluid 3D render in obsidian black and liquid lime tones, silky reflections, studio octane lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrxPBya7kRCHKHQ3aPn9TdFYy_PB6aRxX0T-gryYLPbhtVHS3FHrEWXMSlbN1LIDWb_CaxJL7ryla7aV4QAy9m9YTF2OsyufxNACwtKa6IdECdvZIrW6wSej4lOtImSaAcTfMEV2xnjOO4TWVrZ5f7EmVWZJyxNf1U-tWlHNFvR-f7KcSIXLlwD6X4ucwGBmrdmJqvNmW-CXO5TSCJRk3aRBI0v_5lVFqhoqt7og7c"/>
+<div class="absolute top-2 right-2 w-6 h-6 rounded-full bg-surface-container-lowest/70 backdrop-blur-md flex items-center justify-center text-on-surface-variant">
+<span class="w-2.5 h-2.5 rounded-full bg-surface-variant"></span>
+</div>
+<span class="absolute bottom-1.5 left-1.5 font-label-numeric text-body-sm px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-on-surface">6.7 MB</span>
+</div>
+<!-- Unselected Item 6 -->
+<div class="relative aspect-square rounded-xl overflow-hidden bg-surface-container-high shadow-sm group cursor-pointer">
+<img class="w-full h-full object-cover opacity-85 hover:opacity-100 transition-opacity" data-alt="Close up photography of drone propellers in high precision matte carbon fiber finish, industrial laboratory environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdUhuZvTYWoGk79GPerLIf0HyLKoa_5dLZ_F30PCV4cWn6iCFOod67oCejxNHivdwY-nmtweCYvJdV7KFF7PomKAZ_fwV1RCeKOzq_7ibr8JFJUd7FLt-hlsjfv3h6ohQqRXZXl5vXANEdwb5nWQddIo_8tWS9nSrl7MJm-lXM1VT_ug9j3P8EYjgx2y4qG_2Og_leITjhBD_W33yhnHLAILk7Jl7yuIk6KXtt7h-n"/>
+<div class="absolute top-2 right-2 w-6 h-6 rounded-full bg-surface-container-lowest/70 backdrop-blur-md flex items-center justify-center text-on-surface-variant">
+<span class="w-2.5 h-2.5 rounded-full bg-surface-variant"></span>
+</div>
+<span class="absolute bottom-1.5 left-1.5 font-label-numeric text-body-sm px-1.5 py-0.5 rounded bg-surface-container-lowest/80 text-on-surface">3.9 MB</span>
+</div>
+</div>
+<!-- Large Payloads & System Applications List -->
+<div class="w-full flex flex-col space-y-2 pt-2">
+<div class="flex items-center justify-between pb-1">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">الحزم والملفات الكبيرة</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">تم فرزها حسب الحجم</span>
+</div>
+<!-- File Item 1 (Selected - 4K Video payload) -->
+<div class="w-full bg-surface-container-low rounded-xl p-3 flex items-center justify-between shadow-md relative overflow-hidden group">
+<div class="absolute right-0 top-0 bottom-0 w-1 bg-primary-container"></div>
+<div class="flex items-center gap-3 min-w-0 pr-1">
+<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center text-secondary shrink-0 shadow-inner">
+<span class="material-symbols-outlined text-[24px]">movie</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-semibold truncate">مشروع_الفيديو_بدقة_4K.mp4</span>
+<div class="flex items-center gap-2 font-label-numeric text-body-sm text-on-surface-variant">
+<span>1.84 GB</span>
+<span>•</span>
+<span class="text-tertiary-fixed-dim">MP4 HEVC</span>
+<span>•</span>
+<span>منذ ساعتين</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<div class="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+</div>
+</div>
+<!-- File Item 2 (Unselected - Telegram APK) -->
+<div class="w-full bg-surface-container-low rounded-xl p-3 flex items-center justify-between shadow-sm hover:bg-surface-container transition-colors group cursor-pointer">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center text-primary-container shrink-0 shadow-inner">
+<span class="material-symbols-outlined text-[24px]">android</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate">تطبيق_تيليجرام_10.4.apk</span>
+<div class="flex items-center gap-2 font-label-numeric text-body-sm text-on-surface-variant">
+<span>78.4 MB</span>
+<span>•</span>
+<span class="text-secondary">v10.4.1 (Android)</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<div class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</div>
+<!-- File Item 3 (Unselected - Compressed Archive) -->
+<div class="w-full bg-surface-container-low rounded-xl p-3 flex items-center justify-between shadow-sm hover:bg-surface-container transition-colors group cursor-pointer">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center text-secondary shrink-0 shadow-inner">
+<span class="material-symbols-outlined text-[24px]">folder_zip</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate">قاعدة_بيانات_مستندات_2024.tar.gz</span>
+<div class="flex items-center gap-2 font-label-numeric text-body-sm text-on-surface-variant">
+<span>342.1 MB</span>
+<span>•</span>
+<span>أرشيف مشفر</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<div class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</div>
+<!-- File Item 4 (Unselected - Audio Track) -->
+<div class="w-full bg-surface-container-low rounded-xl p-3 flex items-center justify-between shadow-sm hover:bg-surface-container transition-colors group cursor-pointer">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center text-tertiary-fixed-dim shrink-0 shadow-inner">
+<span class="material-symbols-outlined text-[24px]">graphic_eq</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate">تسجيل_صوتي_اجتماع_التقنية.flac</span>
+<div class="flex items-center gap-2 font-label-numeric text-body-sm text-on-surface-variant">
+<span>45.0 MB</span>
+<span>•</span>
+<span>معدل تدفق 96kHz</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<div class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant group-hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Persistent Floating Tactical Send Bar -->
+<div class="fixed bottom-24 inset-x-margin z-40 max-w-lg mx-auto">
+<div class="w-full bg-surface-container-high/95 backdrop-blur-2xl rounded-full p-2 pr-5 pl-2 flex items-center justify-between shadow-2xl">
+<!-- Selected Payload Summary -->
+<div class="flex flex-col min-w-0 pr-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">4 عناصر محددة</span>
+</div>
+<span class="font-label-numeric text-body-sm text-primary-container font-semibold">1.95 GB • جاهز للنقل النفاث</span>
+</div>
+<!-- High-Energy Action Button -->
+<button class="flex items-center gap-2 bg-primary-container text-on-primary-container px-6 py-3.5 rounded-full font-headline-sm text-headline-sm font-bold shadow-lg transition-transform active:scale-95 group">
+<span>إرسال (4)</span>
+<span class="material-symbols-outlined text-[22px] group-hover:-translate-x-1 transition-transform">cloud_upload</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    // Micro-interactions for payload picker items
+    const photoCards = document.querySelectorAll('.grid > div');
+    photoCards.forEach(card => {
+      card.addEventListener('click', () => {
+        // Toggle selection visuals safely in pure JS
+        const isSelected = card.querySelector('.bg-primary-container');
+        if (!isSelected) {
+          const badge = card.querySelector('.w-6');
+          if (badge) {
+            badge.className = 'absolute top-2 right-2 w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-lg';
+            badge.innerHTML = '<span class="material-symbols-outlined text-[16px] font-bold">check</span>';
+          }
+          const overlay = document.createElement('div');
+          overlay.className = 'absolute inset-0 bg-primary-container/20 backdrop-blur-[1px]';
+          card.appendChild(overlay);
+        }
+      });
+    });
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-low/90 backdrop-blur-xl shadow-[0_-4px_24px_rgba(0,0,0,0.4)]" data-active-classes="text-primary-container font-semibold"><div class="h-20 px-gutter flex items-center justify-around"><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-sm gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors" data-path="home" href="#"><span class="material-symbols-outlined text-[24px]">radar</span><span class="font-body-sm text-body-sm">الرئيسية</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-sm gap-0.5 transition-colors text-primary-container font-semibold" data-path="files" href="#"><span class="material-symbols-outlined text-[24px]">folder_zip</span><span class="font-body-sm text-body-sm">الملفات</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-sm gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors" data-path="activity" href="#"><span class="material-symbols-outlined text-[24px]">swap_calls</span><span class="font-body-sm text-body-sm">النشاط</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-space-sm gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[24px]">tune</span><span class="font-body-sm text-body-sm">الإعدادات</span></a></div></nav></body></html>

@@ -1,0 +1,107 @@
+{
+  "@@locale": "ar",
+  "appName": "زاجل",
+  "send": "إرسال",
+  "receive": "استقبال",
+  "recentTransfers": "آخر عمليات النقل",
+  "noRecentTransfers": "لا توجد عمليات نقل بعد",
+  "comingSoon": "قريباً",
+  "showQr": "عرض QR",
+  "scanQr": "مسح QR",
+  "filePickerTitle": "اختيار الملفات",
+  "tabPhotos": "الصور",
+  "tabVideos": "الفيديو",
+  "tabApps": "التطبيقات",
+  "tabFiles": "الملفات",
+  "sendCount": "إرسال ({count})",
+  "@sendCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "discoveryTitle": "الأجهزة القريبة",
+  "qrShowTitle": "عرض رمز QR",
+  "qrScanTitle": "مسح رمز QR",
+  "transferTitle": "جاري النقل",
+  "cancel": "إلغاء",
+  "doneTitle": "تم النقل",
+  "openFiles": "فتح الملفات",
+  "sendMore": "إرسال المزيد",
+  "settingsTitle": "الإعدادات",
+  "deviceName": "اسم الجهاز",
+  "downloadFolder": "مجلد التنزيل",
+  "language": "اللغة",
+  "languageArabic": "العربية",
+  "languageEnglish": "English",
+  "theme": "المظهر",
+  "themeDark": "داكن",
+  "themeLight": "فاتح",
+  "themeSystem": "حسب النظام",
+  "securityPin": "رمز الأمان (PIN)",
+  "device": "الجهاز",
+  "unavailable": "غير متاح",
+  "searchingDevices": "جاري البحث عن أجهزة قريبة…",
+  "noDevicesFound": "لم يتم العثور على أجهزة. تأكد أن الجهاز الآخر على نفس شبكة الواي فاي ومفتوح عليه زاجل أو LocalSend.",
+  "searchAgain": "إعادة البحث",
+  "readyToReceive": "جاهز للاستقبال باسم {name}",
+  "@readyToReceive": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseFiles": "اختر ملفات",
+  "noFilesSelected": "لم تختر أي ملف بعد",
+  "pickFilesFirst": "اختر ملفات أولاً",
+  "incomingTitle": "طلب استلام ملفات",
+  "incomingBody": "{sender} يريد إرسال {count} ملف ({size})",
+  "@incomingBody": {
+    "placeholders": {
+      "sender": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "accept": "قبول",
+  "decline": "رفض",
+  "declinedByReceiver": "رفض الجهاز الآخر الطلب",
+  "sendFailed": "فشل الإرسال",
+  "enterPin": "أدخل رمز PIN",
+  "pinRequiredHint": "الجهاز الآخر يطلب رمز PIN",
+  "ok": "موافق",
+  "sendingTo": "الإرسال إلى {name}",
+  "@sendingTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "transferNotification": "جاري نقل الملفات…",
+  "benchmarkTitle": "اختبار السرعة",
+  "benchmarkIntro": "يرسل بيانات تجريبية إلى جهاز زاجل آخر بدون حفظ أي ملف، ويقيس السرعة وزمن الاتصال واستهلاك المعالج. يعمل مع زاجل فقط.",
+  "benchmarkRun": "ابدأ الاختبار",
+  "benchmarkSize": "حجم البيانات",
+  "benchmarkConnect": "زمن الاتصال",
+  "benchmarkCpu": "المعالج",
+  "benchmarkNoPeer": "اختر جهاز زاجل قريب لبدء الاختبار",
+  "benchmarkFailed": "فشل الاختبار. تأكد أن الجهاز الآخر يشغّل زاجل وليس تطبيقاً آخر.",
+  "benchmarkRunning": "جاري الاختبار…",
+  "filesCount": "{count} ملف",
+  "@filesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

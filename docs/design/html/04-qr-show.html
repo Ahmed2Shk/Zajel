@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+
+<html class="dark" dir="rtl" lang="ar"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@400;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#111319;}body{overscroll-behavior:none;font-family:'IBM Plex Sans Arabic','IBM Plex Sans',sans-serif;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-secondary": "#00354a", "surface-variant": "#32353a", "on-tertiary": "#003915", "outline": "#8e937a", "on-error-container": "#ffdad6", "on-tertiary-container": "#007432", "surface-container-low": "#191c21", "on-secondary-fixed": "#001e2c", "on-surface": "#e1e2e9", "on-surface-variant": "#c4c9ae", "error": "#ffb4ab", "surface": "#111319", "secondary-fixed-dim": "#7bd0ff", "on-error": "#690005", "secondary": "#7bd0ff", "on-tertiary-fixed": "#002109", "surface-container": "#1d2025", "surface-container-highest": "#32353a", "primary-fixed": "#c5f331", "surface-bright": "#36393f", "surface-dim": "#111319", "inverse-on-surface": "#2e3036", "tertiary": "#ffffff", "secondary-container": "#00a6e0", "on-background": "#e1e2e9", "secondary-fixed": "#c4e7ff", "outline-variant": "#444934", "tertiary-container": "#6bff8f", "inverse-surface": "#e1e2e9", "background": "#111319", "on-secondary-container": "#00374d", "on-primary-fixed": "#161f00", "on-primary": "#283500", "tertiary-fixed-dim": "#4ae176", "tertiary-fixed": "#6bff8f", "primary": "#ffffff", "surface-tint": "#aad600", "inverse-primary": "#506600", "primary-container": "#c5f331", "on-tertiary-fixed-variant": "#005321", "on-secondary-fixed-variant": "#004c69", "surface-container-high": "#272a30", "surface-container-lowest": "#0b0e13", "on-primary-fixed-variant": "#3b4d00", "primary-fixed-dim": "#aad600", "on-primary-container": "#556d00", "error-container": "#93000a" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-xl": "2rem", "gutter": "1rem", "space-lg": "1.5rem", "margin": "1.25rem", "space-xs": "0.25rem", "space-md": "1rem", "space-sm": "0.5rem" }, "fontFamily": { "body-lg": ["IBM Plex Sans"], "label-numeric": ["Inter"], "body-md": ["IBM Plex Sans"], "headline-md": ["IBM Plex Sans"], "label-transfer-speed": ["Inter"], "display-hero": ["IBM Plex Sans"], "label-code": ["Inter"], "headline-lg": ["IBM Plex Sans"], "body-sm": ["IBM Plex Sans"], "headline-sm": ["IBM Plex Sans"], "display-hero-mobile": ["IBM Plex Sans"] }, "fontSize": { "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }], "label-numeric": ["13px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }], "headline-md": ["22px", { "lineHeight": "30px", "fontWeight": "600" }], "label-transfer-speed": ["20px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "display-hero": ["44px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-code": ["15px", { "lineHeight": "20px", "fontWeight": "500" }], "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }], "headline-sm": ["18px", { "lineHeight": "26px", "fontWeight": "600" }], "display-hero-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.25)]"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><button aria-label="رجوع" class="w-11 h-11 flex items-center justify-center text-on-surface rounded-full hover:bg-surface-container-high transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_forward</span></button><img alt="Zajel Carrier Logo" class="h-7 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzc13qBqRepPkrr9ObNJMdgGh4PEHYkaLEuhMMr_xt0GHT3mZXA1hReiiCkIDDIZ4FEPCnl8wW2jMpoA3MrZ14Tuve6DHpbSSlGcAdU1ZBWoRavwj8rAbzLaTWaEJUajxwSA22-GYBo6QlKgoxWxYdYrjvI0N5aiBF4E0aFE7uVgNtRHsl_Topp7TWAGM7g_ed8wpsO-Mqs2tHx_JozEOryuU74WUFGa1HpvfHJfZp"/><h1 class="font-headline-sm text-headline-sm font-bold text-on-surface mr-1">Pairing Code</h1></div><div class="flex items-center gap-space-sm"><span class="font-label-numeric text-body-sm px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-mono">Wi-Fi Direct</span><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWm1bzaEVwwrCGt5sPUolcKI3rJsrCxX2VVWNgy_QgihbsiNP6AJTPP9a6fT3N9U4IfPFczoZ6zpwS6r3tSv1n-5No_LFPo98mAbhDpYdosVe-7TNHuycGMzGTvKUKEClzT8YBQ0FFm76s1qqbJ_UhDL-qxkPeUKq-vjLsUC7z9tw7pbxADin_jOw3z7pzOlPCS6VLcfxndQ0R6kU6aSnSC3O4qOoZVNvBbwzCRF5s"/></div></div></header><main class="flex flex-col relative w-full pt-16 pb-safe bg-surface min-h-screen"><div class="flex flex-col w-full px-margin pb-space-xl" dir="rtl">
+<!-- Subtle Ambient Glow Orbs -->
+<div class="relative w-full">
+<div class="absolute -top-10 right-1/4 w-44 h-44 rounded-full bg-primary-container/10 blur-3xl pointer-events-none"></div>
+<div class="absolute top-24 left-10 w-36 h-36 rounded-full bg-secondary-container/10 blur-3xl pointer-events-none"></div>
+<!-- Status Strip / Telemetry Badge -->
+<div class="flex items-center justify-between mt-space-md mb-space-md bg-surface-container-high px-space-md py-space-xs rounded-full">
+<div class="flex items-center gap-space-xs">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary-fixed"></span>
+</span>
+<span class="font-body-sm text-body-sm text-on-surface">نقطة بث نشطة وجاهزة</span>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label-numeric text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">wifi_tethering</span>
+<span>5.0 GHz P2P</span>
+</div>
+</div>
+<!-- Main Card Container -->
+<div class="relative bg-surface-container rounded-[20px] shadow-xl overflow-hidden p-space-lg flex flex-col items-center">
+<!-- Top Decorative Glow Accent Bar -->
+<div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary-container to-transparent"></div>
+<!-- Instruction Header -->
+<div class="text-center mb-space-md px-space-xs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">امسح الرمز من هاتف المستلم</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">يتم الاتصال تلقائياً عبر بروتوكول زاجل المشفر دون استهلاك بيانات الهاتف</p>
+</div>
+<!-- High-Contrast QR Code Module Frame -->
+<div class="relative bg-surface-container-lowest p-space-md rounded-2xl shadow-inner flex flex-col items-center justify-center my-space-xs">
+<!-- Corner Reticle Markers (Tactile Tech Frame) -->
+<div class="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-primary-container rounded-tr pointer-events-none"></div>
+<div class="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-primary-container rounded-tl pointer-events-none"></div>
+<div class="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-primary-container rounded-br pointer-events-none"></div>
+<div class="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-primary-container rounded-bl pointer-events-none"></div>
+<!-- Rendered Vector High-Contrast QR Code -->
+<div class="relative w-64 h-64 bg-surface p-2 rounded-xl flex items-center justify-center">
+<svg class="w-full h-full text-primary" fill="currentColor" viewbox="0 0 200 200">
+<!-- Top Right Finder (RTL primary scan) -->
+<path d="M10,10 h50 v50 h-50 z M18,18 v34 h34 v-34 z M26,26 h18 v18 h-18 z"></path>
+<!-- Top Left Finder -->
+<path d="M140,10 h50 v50 h-50 z M148,18 v34 h34 v-34 z M156,26 h18 v18 h-18 z"></path>
+<!-- Bottom Right Finder -->
+<path d="M10,140 h50 v50 h-50 z M18,148 v34 h34 v-34 z M26,156 h18 v18 h-18 z"></path>
+<!-- Alignment patterns -->
+<path d="M145,145 h30 v30 h-30 z M152,152 v16 h16 v-16 z M158,158 h4 v4 h-4 z"></path>
+<!-- Timing tracks -->
+<path d="M68,14 h6 v6 h-6 z M82,14 h6 v6 h-6 z M96,14 h6 v6 h-6 z M110,14 h6 v6 h-6 z M124,14 h6 v6 h-6 z"></path>
+<path d="M14,68 h6 v6 h-6 z M14,82 h6 v6 h-6 z M14,96 h6 v6 h-6 z M14,110 h6 v6 h-6 z M14,124 h6 v6 h-6 z"></path>
+<!-- Matrix Payload Data Clusters -->
+<path d="M68,30 h8 v8 h-8 z M80,24 h12 v6 h-12 z M104,24 h8 v14 h-8 z M120,32 h10 v8 h-10 z"></path>
+<path d="M26,68 h8 v6 h-8 z M42,74 h14 v6 h-14 z M26,88 h6 v12 h-6 z M40,94 h12 v6 h-12 z M30,114 h14 v8 h-14 z"></path>
+<path d="M66,66 h14 v14 h-14 z M90,66 h8 v8 h-8 z M108,66 h16 v6 h-16 z M130,70 h6 v16 h-6 z"></path>
+<path d="M66,90 h10 v8 h-10 z M86,84 h12 v12 h-12 z M112,80 h10 v12 h-10 z M128,94 h12 v8 h-12 z"></path>
+<path d="M68,110 h16 v6 h-16 z M92,106 h14 v10 h-14 z M116,108 h8 v8 h-8 z M132,112 h14 v6 h-14 z"></path>
+<path d="M68,124 h8 v14 h-8 z M84,128 h12 v6 h-12 z M104,126 h8 v12 h-8 z M122,126 h14 v8 h-14 z"></path>
+<path d="M148,68 h12 v6 h-12 z M168,72 h14 v8 h-14 z M154,86 h8 v8 h-8 z M170,90 h14 v12 h-14 z"></path>
+<path d="M148,114 h10 v12 h-10 z M166,112 h16 v6 h-16 z M152,132 h12 v8 h-12 z"></path>
+<path d="M24,148 h8 v8 h-8 z M40,154 h12 v6 h-12 z M30,168 h10 v12 h-10 z M44,172 h12 v8 h-12 z"></path>
+<path d="M68,148 h14 v8 h-14 z M90,146 h8 v14 h-8 z M108,146 h14 v8 h-14 z M130,148 h8 v8 h-8 z"></path>
+<path d="M68,168 h8 v12 h-8 z M84,166 h14 v8 h-14 z M104,168 h10 v12 h-10 z M122,166 h12 v12 h-12 z"></path>
+<path d="M72,184 h14 v6 h-14 z M94,184 h8 v6 h-8 z M110,184 h14 v6 h-14 z M130,182 h12 v8 h-12 z"></path>
+<path d="M148,184 h12 v6 h-12 z M168,182 h14 v8 h-14 z"></path>
+</svg>
+<!-- Centered Zajel Carrier Emblem -->
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="w-12 h-12 rounded-full bg-surface-container-lowest p-1 shadow-lg flex items-center justify-center">
+<div class="w-full h-full rounded-full bg-primary-container flex items-center justify-center shadow-[0_0_12px_rgba(197,243,49,0.5)]">
+<span class="material-symbols-outlined text-[26px] text-on-primary-container" style="font-variation-settings: 'FILL' 1;">send</span>
+</div>
+</div>
+</div>
+</div>
+<span class="font-label-numeric text-body-sm text-on-surface-variant mt-2 tracking-wider">SECURE DIRECT PAYLOAD #9482</span>
+</div>
+<!-- Hotspot Network Details Drawer Card -->
+<div class="w-full mt-space-md bg-surface-container-high rounded-xl p-space-md">
+<!-- SSID Row -->
+<div class="flex items-center justify-between mb-space-sm pb-space-sm bg-surface-container-lowest/40 p-space-sm rounded-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">wifi</span>
+</div>
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">اسم الشبكة (SSID)</p>
+<p class="font-label-code text-label-code text-on-surface font-semibold tracking-wide">Zajel-Direct-9482</p>
+</div>
+</div>
+<button class="px-space-sm py-1 rounded-md bg-surface-container-highest text-secondary hover:bg-surface-bright transition-all text-body-sm font-label-numeric flex items-center gap-1" id="copySsidBtn">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>نسخ</span>
+</button>
+</div>
+<!-- Fast Verification PIN Block -->
+<div class="flex items-center justify-between bg-surface-container-lowest/40 p-space-sm rounded-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[18px]">pin</span>
+</div>
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">رمز التحقق السريع (PIN)</p>
+<div class="flex items-center gap-2 mt-0.5" dir="ltr">
+<span class="font-display-hero-mobile text-display-hero-mobile font-bold tracking-[0.25em] text-primary-container">8492</span>
+</div>
+</div>
+</div>
+<button class="px-space-sm py-1 rounded-md bg-surface-container-highest text-primary-container hover:bg-surface-bright transition-all text-body-sm font-label-numeric flex items-center gap-1" id="copyPinBtn">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>نسخ</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Security & Transmission Metric Tags -->
+<div class="flex items-center justify-center flex-wrap gap-2 mt-space-md">
+<div class="flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[15px] text-tertiary-fixed">cloud_off</span>
+<span>بدون إنترنت</span>
+</div>
+<div class="flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[15px] text-secondary">enhanced_encryption</span>
+<span>شبكة محلية مشفرة P2P</span>
+</div>
+<div class="flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[15px] text-primary-container">bolt</span>
+<span>سرعة فائقة (100+ MB/s)</span>
+</div>
+</div>
+<!-- Interaction & Dual-Intent Action Buttons -->
+<div class="flex flex-col gap-space-sm mt-space-lg">
+<!-- Main Action: Share Info -->
+<button class="w-full h-14 bg-primary-container text-on-primary-container font-headline-sm text-headline-sm font-bold rounded-full flex items-center justify-center gap-space-sm shadow-[0_0_24px_-4px_rgba(197,243,49,0.35)] active:scale-[0.98] transition-transform" id="copyAllInfoBtn">
+<span class="material-symbols-outlined text-[22px]">share_windows</span>
+<span>نسخ بيانات الاتصال كاملة</span>
+</button>
+<!-- Secondary Action: Switch to QR Scanner -->
+<button class="w-full h-14 bg-surface-container-high text-secondary font-headline-sm text-headline-sm font-bold rounded-full flex items-center justify-center gap-space-sm active:scale-[0.98] transition-transform shadow-md hover:bg-surface-bright" id="switchScannerBtn">
+<span class="material-symbols-outlined text-[22px]">qr_code_scanner</span>
+<span>التبديل إلى مسح الرمز</span>
+</button>
+</div>
+<!-- Toast Notification for Clipboards -->
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-inverse-surface text-inverse-on-surface px-space-md py-2.5 rounded-full shadow-2xl flex items-center gap-2 text-body-md font-body-md opacity-0 pointer-events-none transition-all duration-300" id="toast">
+<span class="material-symbols-outlined text-primary-fixed text-[18px]">check_circle</span>
+<span id="toastMsg">تم النسخ بنجاح للحافظة</span>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    let toastTimeout;
+
+    function showToast(message) {
+      if (!toast) return;
+      toastMsg.textContent = message;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2400);
+    }
+
+    const ssidBtn = document.getElementById('copySsidBtn');
+    if (ssidBtn) {
+      ssidBtn.addEventListener('click', () => {
+        navigator.clipboard?.writeText('Zajel-Direct-9482');
+        showToast('تم نسخ اسم الشبكة: Zajel-Direct-9482');
+      });
+    }
+
+    const pinBtn = document.getElementById('copyPinBtn');
+    if (pinBtn) {
+      pinBtn.addEventListener('click', () => {
+        navigator.clipboard?.writeText('8492');
+        showToast('تم نسخ رمز التحقق: 8492');
+      });
+    }
+
+    const copyAllBtn = document.getElementById('copyAllInfoBtn');
+    if (copyAllBtn) {
+      copyAllBtn.addEventListener('click', () => {
+        const payload = "شبكة زاجل السريعة\\nاسم الشبكة: Zajel-Direct-9482\\nرمز التحقق PIN: 8492\\nبروتوكول: P2P Wi-Fi Direct";
+        navigator.clipboard?.writeText(payload);
+        showToast('تم نسخ جميع معلومات الاتصال');
+      });
+    }
+
+    const scannerBtn = document.getElementById('switchScannerBtn');
+    if (scannerBtn) {
+      scannerBtn.addEventListener('click', () => {
+        showToast('جاري فتح كاميرا فحص الرمز...');
+      });
+    }
+  })();
+</script></main></body></html>
