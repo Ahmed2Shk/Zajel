@@ -40,6 +40,18 @@ Turn off Wi-Fi networks and mobile data on both phones.
 - [ ] Location off (older Android) → clear message
 - [ ] Test on at least: one Samsung, one Xiaomi/Redmi, one other brand
 
+## Fixes after the first phone test (check each by hand)
+
+- [ ] Received photos and videos appear in the Gallery, other files in Files > Downloads > Zajel (Android 10+)
+- [ ] The receiver opens the receiving screen by itself after tapping Accept; speed, files and Open/Cancel work
+- [ ] After a send, the next send starts with nothing selected
+- [ ] A device whose app was closed disappears from the list within ~20 s; tapping it before that says "no longer available" (no raw "Connection refused")
+- [ ] QR: the code is bigger and scans from ~30 cm; if the join times out, "Join by hand" shows the network and password and the send continues after "Connected"
+- [ ] Wi-Fi Direct: receiver turns on "Visible", sender searches (~15 s) and finds it. If not, capture `adb logcat -s ZajelWifi` from both phones: it shows whether `discoverPeers`, `discoverServices` and the service callback fired (this was not testable without two phones, so treat it as unverified until you do)
+- [ ] Speed test: on failure the screen shows the reason; 64 MB is the default size
+- [ ] Transfer screens show the Wi-Fi band and link speed; below 3 MB/s on a big transfer a hint suggests QR / Wi-Fi Direct
+- [ ] Browser share text explains that nothing goes through the internet
+
 ## Phase 4 — Desktop and browser
 
 - [ ] Windows ↔ Android both ways

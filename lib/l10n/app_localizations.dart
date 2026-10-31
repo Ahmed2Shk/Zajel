@@ -611,7 +611,7 @@ abstract class AppLocalizations {
   /// No description provided for @webShareIntro.
   ///
   /// In ar, this message translates to:
-  /// **'لأي جهاز بدون زاجل: امسح الرمز أو افتح الرابط من متصفحه على نفس الشبكة. يمكنه تنزيل الملفات المختارة وإرسال ملفات إلى هذا الجهاز.'**
+  /// **'لجهاز ما عنده زاجل (كمبيوتر، آيفون، تلفاز…). متصفحه يحمّل الملفات مباشرة من هذا الهاتف عبر الواي فاي. لا يمرّ شيء عبر الإنترنت ولا يحتاج اتصالاً بالإنترنت. امسح الرمز أو افتح الرابط من متصفح ذلك الجهاز. ويستطيع أيضاً إرسال ملفات إلى هذا الهاتف.'**
   String get webShareIntro;
 
   /// No description provided for @webShareWarning.
@@ -721,6 +721,108 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لا توجد ملفات للتنزيل'**
   String get webPageNoFiles;
+
+  /// No description provided for @receivingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري الاستقبال'**
+  String get receivingTitle;
+
+  /// No description provided for @receivedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الاستقبال'**
+  String get receivedTitle;
+
+  /// No description provided for @receiveCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُلغي النقل'**
+  String get receiveCancelled;
+
+  /// No description provided for @receivingFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'من الجهاز'**
+  String get receivingFrom;
+
+  /// No description provided for @fileSaving.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري الحفظ…'**
+  String get fileSaving;
+
+  /// No description provided for @fileSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الحفظ'**
+  String get fileSaved;
+
+  /// No description provided for @openFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح'**
+  String get openFile;
+
+  /// No description provided for @savedWhere.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُحفظ الصور في Pictures والفيديو في Movies والصوت في Music وباقي الملفات في Download، داخل مجلد Zajel.'**
+  String get savedWhere;
+
+  /// No description provided for @savedInAppFolder.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظت الملفات في مجلد التطبيق (أندرويد 9 وما قبله).'**
+  String get savedInAppFolder;
+
+  /// No description provided for @wifiLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'الواي فاي: {info}'**
+  String wifiLine(String info);
+
+  /// No description provided for @slowLinkHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'السرعة منخفضة. غالباً الراوتر يحدّ سرعة كل جهاز أو يمرّر النقل عبره. جرّب رمز QR أو Wi-Fi Direct للاتصال المباشر بين الجهازين.'**
+  String get slowLinkHint;
+
+  /// No description provided for @deviceGone.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الجهاز لم يعد متاحاً. ابحث من جديد.'**
+  String get deviceGone;
+
+  /// No description provided for @joinManually.
+  ///
+  /// In ar, this message translates to:
+  /// **'الانضمام يدوياً'**
+  String get joinManually;
+
+  /// No description provided for @joinManuallyIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح إعدادات الواي فاي واتصل بهذه الشبكة، ثم ارجع واضغط «اتصلت».'**
+  String get joinManuallyIntro;
+
+  /// No description provided for @joinPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة السر'**
+  String get joinPassword;
+
+  /// No description provided for @joinConnected.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصلت'**
+  String get joinConnected;
+
+  /// No description provided for @copy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخ'**
+  String get copy;
 
   /// No description provided for @mediaDenied.
   ///

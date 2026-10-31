@@ -30,14 +30,27 @@ final _noDevicesTimeoutProvider = FutureProvider.autoDispose<bool>((ref) {
 class DiscoveryScreen extends ConsumerWidget {
   const DiscoveryScreen({super.key});
 
-  void _send(BuildContext context, WidgetRef ref, List<PeerRoute> routes) {
+  Future<void> _send(BuildContext context, WidgetRef ref, List<PeerRoute> routes) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
     if (ref.read(selectedFilesProvider).isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.pickFilesFirst)));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.pickFilesFirst)));
       context.push(AppRoutes.filePicker);
       return;
     }
+
+    // A device found on the shared Wi-Fi may have closed its app since: ask it
+    // before starting, instead of failing later with a network error.
+    final lan = routes.whereType<LanRoute>().toList();
+    final service = ref.read(localSendServiceProvider).value;
+    if (routes.length == 1 && lan.length == 1 && service != null) {
+      if (!await service.isReachable(lan.first.device)) {
+        messenger.showSnackBar(SnackBar(content: Text(l10n.deviceGone)));
+        return;
+      }
+    }
+    if (!context.mounted) return;
+
     // The routes are tried fastest first, falling back automatically.
     ref.read(sendJobProvider.notifier).sendVia(routes);
     context.push(AppRoutes.transfer);

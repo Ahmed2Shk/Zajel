@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
 import '../../core/router/app_router.dart';
@@ -34,7 +35,15 @@ class IncomingTransferHost extends ConsumerWidget {
           context: dialogContext,
           barrierDismissible: false,
           builder: (_) => _IncomingDialog(pending: pending),
-        ),
+        ).then((_) async {
+          // Once the user accepts, show the receiving screen at once, so they
+          // can see the transfer, its speed and where the files are saved.
+          final accepted = await pending.decision;
+          final context = rootNavigatorKey.currentContext;
+          if (accepted != null && context != null && context.mounted) {
+            GoRouter.of(context).go(AppRoutes.receive);
+          }
+        }),
       );
     });
     return child;

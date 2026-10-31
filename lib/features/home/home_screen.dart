@@ -81,7 +81,11 @@ class HomeScreen extends ConsumerWidget {
               icon: Icons.north_east,
               title: l10n.send,
               subtitle: l10n.sendSubtitle,
-              onTap: () => context.push(AppRoutes.filePicker),
+              onTap: () {
+                // Start from an empty selection, not what a cancelled send left.
+                ref.read(selectedFilesProvider.notifier).clear();
+                context.push(AppRoutes.filePicker);
+              },
             ),
             const SizedBox(height: 14),
             _BigAction(

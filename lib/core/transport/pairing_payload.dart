@@ -30,7 +30,7 @@ class PairingPayload {
   });
 
   static const scheme = 'zajel';
-  static const version = 1;
+  static const version = 2;
 
   final String ssid;
   final String passphrase;
@@ -47,22 +47,33 @@ class PairingPayload {
   final String pin;
   final String alias;
 
-  /// `zajel://pair?d=<base64url json>`
+  /// `zajel://pair?d=<base64url json array>`
+  ///
+  /// A JSON array without key names and the fingerprint as base64 instead of
+  /// hex: about 40% shorter than the first format, which makes a QR code with
+  /// bigger squares that cameras read faster and from further away.
   String encode() {
-    final json = jsonEncode({
-      'v': version,
-      'ssid': ssid,
-      'pass': passphrase,
-      'ip': ip,
-      'port': port,
-      'fp': fingerprint,
-      'tok': token,
-      'pin': pin,
-      'name': alias,
-    });
+    final json = jsonEncode([
+      version,
+      ssid,
+      passphrase,
+      ip,
+      port,
+      base64Url.encode(_hexToBytes(fingerprint)).replaceAll('=', ''),
+      token,
+      pin,
+      alias,
+    ]);
     final data = base64Url.encode(utf8.encode(json)).replaceAll('=', '');
     return '$scheme://pair?d=$data';
   }
+
+  static List<int> _hexToBytes(String hex) => [
+    for (var i = 0; i < hex.length; i += 2) int.parse(hex.substring(i, i + 2), radix: 16),
+  ];
+
+  static String _bytesToHex(List<int> bytes) =>
+      bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 
   /// Reads a scanned code. Anything unexpected throws
   /// [PairingFormatException]; a QR code is untrusted input.
@@ -83,31 +94,36 @@ class PairingPayload {
     } on FormatException {
       throw const PairingFormatException('unreadable data');
     }
-    if (decoded is! Map<String, dynamic>) {
+    if (decoded is! List<dynamic> || decoded.length != 9) {
       throw const PairingFormatException('unexpected structure');
     }
-    final map = decoded;
-    if (map['v'] != version) {
+    final list = decoded;
+    if (list[0] != version) {
       throw const PairingFormatException('unsupported version');
     }
 
-    String text(String key, {required int min, required int max}) {
-      final value = map[key];
+    String text(int index, String name, {required int min, required int max}) {
+      final value = list[index];
       if (value is! String || value.length < min || value.length > max) {
-        throw PairingFormatException('bad $key');
+        throw PairingFormatException('bad $name');
       }
       return value;
     }
 
-    final ssid = text('ssid', min: 1, max: 32);
-    final passphrase = text('pass', min: 8, max: 63); // WPA2 length limits
-    final alias = text('name', min: 1, max: 64);
-    final fingerprint = text('fp', min: 64, max: 64);
-    final token = text('tok', min: 16, max: 64);
-    final pin = text('pin', min: 4, max: 8);
-    final ip = text('ip', min: 7, max: 15);
+    final ssid = text(1, 'ssid', min: 1, max: 32);
+    final passphrase = text(2, 'pass', min: 8, max: 63); // WPA2 length limits
+    final ip = text(3, 'ip', min: 7, max: 15);
+    final fingerprintText = text(5, 'fp', min: 43, max: 43);
+    final token = text(6, 'tok', min: 16, max: 64);
+    final pin = text(7, 'pin', min: 4, max: 8);
+    final alias = text(8, 'name', min: 1, max: 64);
 
-    if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(fingerprint)) {
+    final String fingerprint;
+    try {
+      final bytes = base64Url.decode('$fingerprintText=');
+      if (bytes.length != 32) throw const FormatException();
+      fingerprint = _bytesToHex(bytes);
+    } on FormatException {
       throw const PairingFormatException('bad fp');
     }
     if (!RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(token)) {
@@ -116,7 +132,7 @@ class PairingPayload {
     if (!RegExp(r'^\d{4,8}$').hasMatch(pin)) {
       throw const PairingFormatException('bad pin');
     }
-    final port = map['port'];
+    final port = list[4];
     if (port is! int || port < 1 || port > 65535) {
       throw const PairingFormatException('bad port');
     }

@@ -76,9 +76,9 @@ class _QrShowScreenState extends ConsumerState<QrShowScreen> {
                       child: QrImageView(
                         key: ValueKey(payload.encode()), // lets tests read the code
                         data: payload.encode(),
-                        size: 260,
+                        size: (MediaQuery.sizeOf(context).width - 112).clamp(260.0, 360.0),
                         backgroundColor: Colors.white,
-                        errorCorrectionLevel: QrErrorCorrectLevel.M,
+                        errorCorrectionLevel: QrErrorCorrectLevel.L, // fewer, bigger squares
                         eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
                         dataModuleStyle: const QrDataModuleStyle(
                           dataModuleShape: QrDataModuleShape.square,

@@ -288,7 +288,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webShareIntro =>
-      'For any device without Zajel: scan the code or open the link in its browser on the same network. It can download the files you chose and send files to this device.';
+      'For a device without Zajel (a computer, an iPhone, a TV…). Its browser downloads the files straight from this phone over your Wi-Fi. Nothing goes through the internet and no internet connection is needed. Scan the code or open the link in that device\'s browser. It can also send files to this phone.';
 
   @override
   String get webShareWarning =>
@@ -349,6 +349,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webPageNoFiles => 'No files to download';
+
+  @override
+  String get receivingTitle => 'Receiving';
+
+  @override
+  String get receivedTitle => 'Received';
+
+  @override
+  String get receiveCancelled => 'The transfer was cancelled';
+
+  @override
+  String get receivingFrom => 'From';
+
+  @override
+  String get fileSaving => 'Saving…';
+
+  @override
+  String get fileSaved => 'Saved';
+
+  @override
+  String get openFile => 'Open';
+
+  @override
+  String get savedWhere =>
+      'Photos are saved in Pictures, videos in Movies, audio in Music and other files in Download, inside a Zajel folder.';
+
+  @override
+  String get savedInAppFolder =>
+      'Files were saved in the app\'s folder (Android 9 and earlier).';
+
+  @override
+  String wifiLine(String info) {
+    return 'Wi-Fi: $info';
+  }
+
+  @override
+  String get slowLinkHint =>
+      'The speed is low. Often the router limits each device or relays the transfer. Try a QR code or Wi-Fi Direct for a direct link between the two devices.';
+
+  @override
+  String get deviceGone => 'That device is no longer available. Search again.';
+
+  @override
+  String get joinManually => 'Join by hand';
+
+  @override
+  String get joinManuallyIntro =>
+      'Open the Wi-Fi settings and join this network, then come back and tap \"Connected\".';
+
+  @override
+  String get joinPassword => 'Password';
+
+  @override
+  String get joinConnected => 'Connected';
+
+  @override
+  String get copy => 'Copy';
 
   @override
   String get mediaDenied =>

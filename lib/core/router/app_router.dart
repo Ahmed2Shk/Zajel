@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/home/home_screen.dart';
 import '../../features/qr/qr_scan_screen.dart';
+import '../../features/receive/receive_screen.dart';
 import '../../features/qr/qr_show_screen.dart';
 import '../../features/send/discovery_screen.dart';
 import '../../features/send/done_screen.dart';
@@ -24,6 +25,7 @@ abstract final class AppRoutes {
   static const settings = '/settings';
   static const benchmark = '/benchmark';
   static const webShare = '/web-share';
+  static const receive = '/receive';
 }
 
 /// Lets code outside the widget tree (incoming-transfer dialogs) reach the
@@ -57,6 +59,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.webShare,
         builder: (_, _) => const WebShareScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.receive,
+        builder: (_, _) => const ReceiveScreen(),
       ),
       GoRoute(
         path: AppRoutes.benchmark,

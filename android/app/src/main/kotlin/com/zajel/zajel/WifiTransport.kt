@@ -23,6 +23,7 @@ import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.core.content.ContextCompat
 import java.security.SecureRandom
 
@@ -334,6 +335,7 @@ class WifiTransport(
             { fullDomain: String, record: Map<String, String>, device: WifiP2pDevice ->
                 val fingerprint = record["fp"]
                 val port = record["port"]?.toLongOrNull()
+                Log.d(TAG, "service seen: $fullDomain from ${device.deviceName}")
                 if (fullDomain.contains("_zajel") && fingerprint != null && port != null) {
                     found[device.deviceAddress] = NativeDirectPeer(
                         deviceAddress = device.deviceAddress,
@@ -347,22 +349,62 @@ class WifiTransport(
             },
         )
 
+        var finished = false
+        fun finish(result: Result<List<NativeDirectPeer>>) {
+            if (finished) return
+            finished = true
+            manager.clearServiceRequests(ch, null)
+            callback(result)
+        }
+
+        // Service discovery alone often finds nothing: the radio must also be
+        // scanning for peers, and the service query is repeated, because a single
+        // query is easily missed. (Behaviour differs a lot between phone makers.)
+        fun query() {
+            if (finished) return
+            manager.discoverServices(ch, object : WifiP2pManager.ActionListener {
+                override fun onSuccess() {
+                    Log.d(TAG, "discoverServices started")
+                }
+
+                override fun onFailure(reason: Int) {
+                    // BUSY is normal while a previous query is still running.
+                    Log.w(TAG, "discoverServices failed ($reason)")
+                    if (reason == WifiP2pManager.P2P_UNSUPPORTED) finish(Result.failure(p2pFailure(reason)))
+                }
+            })
+        }
+
+        fun repeatQuery(round: Int) {
+            if (finished || round > MAX_QUERY_ROUNDS) return
+            query()
+            main.postDelayed({ repeatQuery(round + 1) }, QUERY_INTERVAL_MS)
+        }
+
         val request = WifiP2pDnsSdServiceRequest.newInstance()
-        manager.clearServiceRequests(ch, null)
-        manager.addServiceRequest(ch, request, object : WifiP2pManager.ActionListener {
-            override fun onSuccess() {
-                manager.discoverServices(ch, object : WifiP2pManager.ActionListener {
-                    override fun onSuccess() {}
-                    override fun onFailure(reason: Int) = callback(Result.failure(p2pFailure(reason)))
+        manager.clearServiceRequests(ch, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() = addRequest()
+            override fun onFailure(reason: Int) = addRequest()
+
+            fun addRequest() {
+                manager.addServiceRequest(ch, request, object : WifiP2pManager.ActionListener {
+                    override fun onSuccess() {
+                        manager.discoverPeers(ch, object : WifiP2pManager.ActionListener {
+                            override fun onSuccess() = Log.d(TAG, "discoverPeers started")
+                            override fun onFailure(reason: Int) = Log.w(TAG, "discoverPeers failed ($reason)")
+                        })
+                        repeatQuery(0)
+                    }
+
+                    override fun onFailure(reason: Int) = finish(Result.failure(p2pFailure(reason)))
                 })
             }
-
-            override fun onFailure(reason: Int) = callback(Result.failure(p2pFailure(reason)))
         })
 
         main.postDelayed({
-            manager.clearServiceRequests(ch, null)
-            callback(Result.success(found.values.toList()))
+            Log.d(TAG, "discovery finished with ${found.size} peer(s)")
+            manager.stopPeerDiscovery(ch, null)
+            finish(Result.success(found.values.toList()))
         }, timeoutMs)
     }
 
@@ -438,7 +480,10 @@ class WifiTransport(
     }
 
     companion object {
-        private const val JOIN_TIMEOUT_MS = 30_000
+        private const val JOIN_TIMEOUT_MS = 45_000
         private const val SERVICE_TYPE = "_zajel._tcp"
+        private const val TAG = "ZajelWifi"
+        private const val QUERY_INTERVAL_MS = 4_000L
+        private const val MAX_QUERY_ROUNDS = 6
     }
 }

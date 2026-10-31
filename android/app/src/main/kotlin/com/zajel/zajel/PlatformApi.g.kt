@@ -386,6 +386,52 @@ data class NativeDirectPeer (
     return result
   }
 }
+
+/**
+ * What the current Wi-Fi connection looks like, to explain a slow transfer.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class NativeWifiInfo (
+  val frequencyMhz: Long,
+  val linkSpeedMbps: Long,
+  val rssiDbm: Long
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): NativeWifiInfo {
+      val frequencyMhz = pigeonVar_list[0] as Long
+      val linkSpeedMbps = pigeonVar_list[1] as Long
+      val rssiDbm = pigeonVar_list[2] as Long
+      return NativeWifiInfo(frequencyMhz, linkSpeedMbps, rssiDbm)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      frequencyMhz,
+      linkSpeedMbps,
+      rssiDbm,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as NativeWifiInfo
+    return PlatformApiPigeonUtils.deepEquals(this.frequencyMhz, other.frequencyMhz) && PlatformApiPigeonUtils.deepEquals(this.linkSpeedMbps, other.linkSpeedMbps) && PlatformApiPigeonUtils.deepEquals(this.rssiDbm, other.rssiDbm)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.frequencyMhz)
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.linkSpeedMbps)
+    result = 31 * result + PlatformApiPigeonUtils.deepHash(this.rssiDbm)
+    return result
+  }
+}
 private open class PlatformApiPigeonCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
@@ -409,6 +455,11 @@ private open class PlatformApiPigeonCodec : StandardMessageCodec() {
           NativeDirectPeer.fromList(it)
         }
       }
+      133.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          NativeWifiInfo.fromList(it)
+        }
+      }
       else -> super.readValueOfType(type, buffer)
     }
   }
@@ -428,6 +479,10 @@ private open class PlatformApiPigeonCodec : StandardMessageCodec() {
       }
       is NativeDirectPeer -> {
         stream.write(132)
+        writeValue(stream, value.toList())
+      }
+      is NativeWifiInfo -> {
+        stream.write(133)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
@@ -468,6 +523,17 @@ interface PlatformApi {
    * thread, so a long list of apps can ask for icons as they scroll into view.
    */
   fun getAppIcon(packageName: String, sizePx: Long, callback: (Result<ByteArray?>) -> Unit)
+  /**
+   * Moves a finished file out of the private receiving folder into a public
+   * one that the gallery and file manager can see: Pictures, Movies, Music or
+   * Download, each in a "Zajel" sub-folder. Android 10+. Returns the content
+   * Uri, or null when it could not be moved (the file then stays where it is).
+   */
+  fun publishFile(path: String, displayName: String, mimeType: String, callback: (Result<String?>) -> Unit)
+  /** Opens a published file in the app the user prefers. False if none can. */
+  fun openPublished(uri: String, mimeType: String): Boolean
+  /** Wi-Fi facts for the connection in use: band, link speed and signal. */
+  fun getWifiInfo(): NativeWifiInfo?
 
   companion object {
     /** The codec used by PlatformApi. */
@@ -608,6 +674,61 @@ interface PlatformApi {
                 reply.reply(PlatformApiPigeonUtils.wrapResult(data))
               }
             }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.PlatformApi.publishFile$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val pathArg = args[0] as String
+            val displayNameArg = args[1] as String
+            val mimeTypeArg = args[2] as String
+            api.publishFile(pathArg, displayNameArg, mimeTypeArg) { result: Result<String?> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PlatformApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PlatformApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.PlatformApi.openPublished$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val uriArg = args[0] as String
+            val mimeTypeArg = args[1] as String
+            val wrapped: List<Any?> = try {
+              listOf(api.openPublished(uriArg, mimeTypeArg))
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.PlatformApi.getWifiInfo$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.getWifiInfo())
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)

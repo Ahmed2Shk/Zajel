@@ -53,6 +53,19 @@ abstract class PlatformApi {
   /// thread, so a long list of apps can ask for icons as they scroll into view.
   @async
   Uint8List? getAppIcon(String packageName, int sizePx);
+
+  /// Moves a finished file out of the private receiving folder into a public
+  /// one that the gallery and file manager can see: Pictures, Movies, Music or
+  /// Download, each in a "Zajel" sub-folder. Android 10+. Returns the content
+  /// Uri, or null when it could not be moved (the file then stays where it is).
+  @async
+  String? publishFile(String path, String displayName, String mimeType);
+
+  /// Opens a published file in the app the user prefers. False if none can.
+  bool openPublished(String uri, String mimeType);
+
+  /// Wi-Fi facts for the connection in use: band, link speed and signal.
+  NativeWifiInfo? getWifiInfo();
 }
 /// The Android data path. A TLS server written in Kotlin receives file chunks
 /// straight from the socket onto the disk with `FileChannel`, so file bytes
@@ -158,4 +171,17 @@ abstract class TransportApi {
   String connectDirect(NativeDirectPeer peer);
 
   void disconnectDirect();
+}
+
+/// What the current Wi-Fi connection looks like, to explain a slow transfer.
+class NativeWifiInfo {
+  NativeWifiInfo({
+    required this.frequencyMhz,
+    required this.linkSpeedMbps,
+    required this.rssiDbm,
+  });
+
+  int frequencyMhz;
+  int linkSpeedMbps;
+  int rssiDbm;
 }

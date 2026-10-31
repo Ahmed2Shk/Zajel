@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import '../discovery/device_probe.dart';
 import '../discovery/multicast_discovery.dart';
 import '../logging/app_log.dart';
 import '../platform/native_data_bridge.dart';
@@ -8,6 +9,7 @@ import '../platform/platform_api.g.dart';
 import '../security/device_identity.dart';
 import 'protocol_models.dart';
 import 'receive_server.dart';
+import 'receive_tracker.dart';
 import 'send_client.dart';
 import 'web_share_page.dart';
 import 'web_share_server.dart';
@@ -55,6 +57,9 @@ class LocalSendService {
   final MulticastDiscovery _discovery;
   final PlatformApi? _platform;
 
+  /// The receiving side of the current transfer, for the receiving screen.
+  late final ReceiveTracker receive = ReceiveTracker(publish: _publishFile);
+
   /// Localized text for the ongoing-transfer notification.
   ({String title, String text}) Function() notificationText = () =>
       (title: 'Zajel', text: '');
@@ -68,6 +73,8 @@ class LocalSendService {
 
   final _incoming = StreamController<PendingIncoming>.broadcast();
   final _devices = <String, DiscoveredDevice>{};
+  final _misses = <String, int>{};
+  Timer? _livenessTimer;
   final _devicesChanged = StreamController<List<DiscoveredDevice>>.broadcast();
   StreamSubscription<DiscoveredDevice>? _discoverySub;
 
@@ -132,6 +139,7 @@ class LocalSendService {
     } catch (_) {}
     await _server.start(port: port);
     _eventsSub = _server.events.listen((event) {
+      receive.handle(event);
       if (event is SessionStarted) {
         _log?.info(
           'receive',
@@ -145,8 +153,34 @@ class LocalSendService {
       }
     });
     _discoverySub = _discovery.devices.listen(_remember);
+    _livenessTimer = Timer.periodic(const Duration(seconds: 8), (_) => _checkDevices());
     await _discovery.start();
   }
+
+  /// Moves a received file to a public folder (Android) so the gallery and file
+  /// manager show it. Other platforms already save into the user's folder.
+  Future<String?> _publishFile(String path, String name, String mimeType) async {
+    final platform = _platform;
+    if (platform == null) return null;
+    try {
+      return await platform.publishFile(path, name, mimeType);
+    } catch (e, stack) {
+      _log?.error('publish', e, stack);
+      return null;
+    }
+  }
+
+  /// Opens a saved file with the user's preferred app.
+  Future<bool> openReceived(String location, String mimeType) async {
+    try {
+      return await _platform?.openPublished(location, mimeType) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Stops the transfer that is coming in.
+  Future<void> cancelReceive() => _server.cancelSession();
 
   /// A transfer (sending or receiving) is starting. While at least one is
   /// active, Android keeps the app alive with the screen off.
@@ -238,11 +272,15 @@ class LocalSendService {
   bool get isPairingArmed => _server.isPairingArmed;
 
   /// Announces again, for the "search again" action.
-  void rescan() => _discovery.announce();
+  void rescan() {
+    _discovery.announce();
+    _checkDevices(); // also drop devices that have gone
+  }
 
   Future<void> stop() async {
     await stopWebShare();
     await _eventsSub?.cancel();
+    _livenessTimer?.cancel();
     await _discoverySub?.cancel();
     await _discovery.stop();
     await _server.stop();
@@ -272,7 +310,41 @@ class LocalSendService {
 
   void _remember(DiscoveredDevice found) {
     _devices[found.info.fingerprint] = found;
+    _misses.remove(found.info.fingerprint); // heard from it just now
     _devicesChanged.add(devices);
+  }
+
+  void _forget(String fingerprint) {
+    if (_devices.remove(fingerprint) != null) {
+      _misses.remove(fingerprint);
+      _devicesChanged.add(devices);
+    }
+  }
+
+  /// Checks that the device is still there. If not, it leaves the list, so the
+  /// user is never offered a device whose app has been closed.
+  Future<bool> isReachable(DiscoveredDevice device) async {
+    final alive = await probeDevice(device);
+    if (!alive) _forget(device.info.fingerprint);
+    return alive;
+  }
+
+  /// Every few seconds, asks each listed device whether it is still there. Two
+  /// misses in a row remove it (one miss can be a lost packet).
+  Future<void> _checkDevices() async {
+    for (final device in devices) {
+      final fingerprint = device.info.fingerprint;
+      if (await probeDevice(device)) {
+        _misses.remove(fingerprint);
+      } else {
+        final misses = (_misses[fingerprint] ?? 0) + 1;
+        if (misses >= 2) {
+          _forget(fingerprint);
+        } else {
+          _misses[fingerprint] = misses;
+        }
+      }
+    }
   }
 }
 

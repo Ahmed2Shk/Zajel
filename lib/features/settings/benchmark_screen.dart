@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/discovery/multicast_discovery.dart';
+import '../../core/logging/log_providers.dart';
 import '../../core/transfer/send_client.dart';
 import '../../core/transfer/transfer_providers.dart';
 import '../../l10n/l10n.dart';
@@ -27,9 +30,12 @@ class BenchmarkScreen extends ConsumerStatefulWidget {
 
 class _BenchmarkScreenState extends ConsumerState<BenchmarkScreen> {
   DiscoveredDevice? _peer;
-  int _megabytes = 256;
+  int _megabytes = 64; // small by default: on a slow link 256 MB takes minutes
   bool _running = false;
   bool _failed = false;
+
+  /// Why the test failed, shown under the general message.
+  String? _error;
   _Result? _result;
 
   Future<void> _run() async {
@@ -40,9 +46,13 @@ class _BenchmarkScreenState extends ConsumerState<BenchmarkScreen> {
     setState(() {
       _running = true;
       _failed = false;
+      _error = null;
       _result = null;
     });
     try {
+      if (!await service.isReachable(peer)) {
+        throw const SocketException('The device did not answer');
+      }
       final cpuBefore = await service.cpuTimeMs();
       final wall = Stopwatch()..start();
       final benchmark = await service.client.benchmark(
@@ -57,8 +67,14 @@ class _BenchmarkScreenState extends ConsumerState<BenchmarkScreen> {
           ? null
           : (cpuAfter - cpuBefore) / wall.elapsedMilliseconds * 100;
       if (mounted) setState(() => _result = _Result(benchmark, cpu));
-    } catch (_) {
-      if (mounted) setState(() => _failed = true);
+    } catch (e, stack) {
+      ref.read(appLogProvider)?.error('benchmark', e, stack);
+      if (mounted) {
+        setState(() {
+          _failed = true;
+          _error = e is SendException ? '${e.message} (${e.statusCode ?? '-'})' : e.toString();
+        });
+      }
     } finally {
       if (mounted) setState(() => _running = false);
     }
@@ -104,6 +120,7 @@ class _BenchmarkScreenState extends ConsumerState<BenchmarkScreen> {
             SegmentedButton<int>(
               showSelectedIcon: false,
               segments: const [
+                ButtonSegment(value: 64, label: Text('64 MB')),
                 ButtonSegment(value: 256, label: Text('256 MB')),
                 ButtonSegment(value: 1024, label: Text('1 GB')),
               ],
@@ -118,12 +135,24 @@ class _BenchmarkScreenState extends ConsumerState<BenchmarkScreen> {
               child: Text(_running ? l10n.benchmarkRunning : l10n.benchmarkRun),
             ),
             const SizedBox(height: 32),
-            if (_failed)
+            if (_running) const LinearProgressIndicator(),
+            if (_failed) ...[
               Text(
                 l10n.benchmarkFailed,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: scheme.error),
               ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: SelectableText(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.ltr,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+            ],
             if (result != null) ...[
               Text(
                 result.benchmark.megabytesPerSecond.toStringAsFixed(1),

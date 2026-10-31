@@ -288,7 +288,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get webShareIntro =>
-      'لأي جهاز بدون زاجل: امسح الرمز أو افتح الرابط من متصفحه على نفس الشبكة. يمكنه تنزيل الملفات المختارة وإرسال ملفات إلى هذا الجهاز.';
+      'لجهاز ما عنده زاجل (كمبيوتر، آيفون، تلفاز…). متصفحه يحمّل الملفات مباشرة من هذا الهاتف عبر الواي فاي. لا يمرّ شيء عبر الإنترنت ولا يحتاج اتصالاً بالإنترنت. امسح الرمز أو افتح الرابط من متصفح ذلك الجهاز. ويستطيع أيضاً إرسال ملفات إلى هذا الهاتف.';
 
   @override
   String get webShareWarning =>
@@ -348,6 +348,63 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get webPageNoFiles => 'لا توجد ملفات للتنزيل';
+
+  @override
+  String get receivingTitle => 'جاري الاستقبال';
+
+  @override
+  String get receivedTitle => 'تم الاستقبال';
+
+  @override
+  String get receiveCancelled => 'أُلغي النقل';
+
+  @override
+  String get receivingFrom => 'من الجهاز';
+
+  @override
+  String get fileSaving => 'جاري الحفظ…';
+
+  @override
+  String get fileSaved => 'تم الحفظ';
+
+  @override
+  String get openFile => 'فتح';
+
+  @override
+  String get savedWhere =>
+      'تُحفظ الصور في Pictures والفيديو في Movies والصوت في Music وباقي الملفات في Download، داخل مجلد Zajel.';
+
+  @override
+  String get savedInAppFolder =>
+      'حُفظت الملفات في مجلد التطبيق (أندرويد 9 وما قبله).';
+
+  @override
+  String wifiLine(String info) {
+    return 'الواي فاي: $info';
+  }
+
+  @override
+  String get slowLinkHint =>
+      'السرعة منخفضة. غالباً الراوتر يحدّ سرعة كل جهاز أو يمرّر النقل عبره. جرّب رمز QR أو Wi-Fi Direct للاتصال المباشر بين الجهازين.';
+
+  @override
+  String get deviceGone => 'هذا الجهاز لم يعد متاحاً. ابحث من جديد.';
+
+  @override
+  String get joinManually => 'الانضمام يدوياً';
+
+  @override
+  String get joinManuallyIntro =>
+      'افتح إعدادات الواي فاي واتصل بهذه الشبكة، ثم ارجع واضغط «اتصلت».';
+
+  @override
+  String get joinPassword => 'كلمة السر';
+
+  @override
+  String get joinConnected => 'اتصلت';
+
+  @override
+  String get copy => 'نسخ';
 
   @override
   String get mediaDenied => 'نحتاج إذن الوصول إلى الصور والفيديو لعرضها هنا.';

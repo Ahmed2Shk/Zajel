@@ -12,6 +12,10 @@ makes no network requests to any server on the internet.
 ## What stays on your device
 
 - **Your settings:** language, theme, device name, download folder and the PIN you choose for receiving.
+- **Files you receive:** on Android 10 and later they are saved in the public folders of your phone (photos and
+  videos in Pictures/Movies, music in Music, everything else in Downloads, each inside a "Zajel" folder), so the
+  Gallery and the file manager can show them. Other apps that you allow to read those folders can see them, like any
+  other file in them. You can delete them from there at any time.
 - **A list of recent transfers** (file name, size, the other device's name, time), so the home screen can show it.
   You can clear it from the home screen.
 - **A local log** of app events and errors that helps with problems. It never contains file names, file contents,

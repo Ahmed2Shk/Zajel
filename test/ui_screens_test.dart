@@ -280,6 +280,20 @@ void main() {
       expect(find.text('رفض الجهاز الآخر الطلب'), findsOneWidget);
     });
 
+    testWidgets('a device that is gone says so instead of showing a network error', (tester) async {
+      final job = SendJob(
+        status: SendStatus.failed,
+        target: _device('Anas', 'b'),
+        error: 'unreachable',
+      );
+      final container = await _pump(tester, overrides: [
+        sendJobProvider.overrideWith(() => _FakeSendJob(job)),
+      ]);
+      await _go(tester, container, AppRoutes.transfer);
+      expect(find.text('هذا الجهاز لم يعد متاحاً. ابحث من جديد.'), findsOneWidget);
+      expect(find.textContaining('SocketException'), findsNothing);
+    });
+
     testWidgets('a finished send shows the summary', (tester) async {
       final a = await _makeFile(tester, 'a.bin', 1024 * 1024);
       final job = SendJob(

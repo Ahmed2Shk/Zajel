@@ -322,6 +322,57 @@ class NativeDirectPeer {
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
 
+/// What the current Wi-Fi connection looks like, to explain a slow transfer.
+class NativeWifiInfo {
+  NativeWifiInfo({
+    required this.frequencyMhz,
+    required this.linkSpeedMbps,
+    required this.rssiDbm,
+  });
+
+  int frequencyMhz;
+
+  int linkSpeedMbps;
+
+  int rssiDbm;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      frequencyMhz,
+      linkSpeedMbps,
+      rssiDbm,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static NativeWifiInfo decode(Object result) {
+    result as List<Object?>;
+    return NativeWifiInfo(
+      frequencyMhz: result[0]! as int,
+      linkSpeedMbps: result[1]! as int,
+      rssiDbm: result[2]! as int,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! NativeWifiInfo || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(frequencyMhz, other.frequencyMhz) && _deepEquals(linkSpeedMbps, other.linkSpeedMbps) && _deepEquals(rssiDbm, other.rssiDbm);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+}
+
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -342,6 +393,9 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is NativeDirectPeer) {
       buffer.putUint8(132);
       writeValue(buffer, value.encode());
+    }    else if (value is NativeWifiInfo) {
+      buffer.putUint8(133);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -358,6 +412,8 @@ class _PigeonCodec extends StandardMessageCodec {
         return NativeNetworkInfo.decode(readValue(buffer)!);
       case 132:
         return NativeDirectPeer.decode(readValue(buffer)!);
+      case 133:
+        return NativeWifiInfo.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -535,6 +591,69 @@ class PlatformApi {
     )
     ;
     return pigeonVar_replyValue as Uint8List?;
+  }
+
+  /// Moves a finished file out of the private receiving folder into a public
+  /// one that the gallery and file manager can see: Pictures, Movies, Music or
+  /// Download, each in a "Zajel" sub-folder. Android 10+. Returns the content
+  /// Uri, or null when it could not be moved (the file then stays where it is).
+  Future<String?> publishFile(String path, String displayName, String mimeType) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.PlatformApi.publishFile$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[path, displayName, mimeType]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+    return pigeonVar_replyValue as String?;
+  }
+
+  /// Opens a published file in the app the user prefers. False if none can.
+  Future<bool> openPublished(String uri, String mimeType) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.PlatformApi.openPublished$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[uri, mimeType]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as bool;
+  }
+
+  /// Wi-Fi facts for the connection in use: band, link speed and signal.
+  Future<NativeWifiInfo?> getWifiInfo() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.PlatformApi.getWifiInfo$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+    return pigeonVar_replyValue as NativeWifiInfo?;
   }
 }
 

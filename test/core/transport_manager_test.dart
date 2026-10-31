@@ -165,6 +165,13 @@ void main() {
       expect(backend.calls, contains('join:AndroidShare_1'));
     });
 
+    test('after the user joined by hand the app does not join again', () async {
+      final endpoint = await manager.establish([QrRoute(_payload(), alreadyJoined: true)]);
+      expect(endpoint.address.address, '192.168.43.1');
+      expect(endpoint.pairToken, 'tokentokentoken12');
+      expect(backend.calls.where((c) => c.startsWith('join:')), isEmpty);
+    });
+
     test('release leaves the network it joined', () async {
       final endpoint = await manager.establish([QrRoute(_payload())]);
       await manager.release(endpoint);

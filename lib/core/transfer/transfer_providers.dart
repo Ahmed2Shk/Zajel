@@ -12,9 +12,11 @@ import '../logging/log_providers.dart';
 import '../platform/native_data_bridge.dart';
 import '../platform/platform_api.g.dart';
 import '../security/device_identity.dart';
+import '../transport/pairing_payload.dart';
 import '../transport/transport_manager.dart';
 import 'localsend_service.dart';
 import 'protocol_models.dart';
+import 'receive_tracker.dart';
 import 'send_client.dart';
 import 'web_share_page.dart';
 
@@ -159,6 +161,12 @@ class SendJobNotifier extends Notifier<SendJob> {
 
   SendSession? _session;
   var _cancelled = false;
+  List<PeerRoute> _lastRoutes = const [];
+
+  /// The QR code this send was started from, so a failed join can be retried
+  /// after the user joins the hotspot by hand.
+  PairingPayload? get lastQrPayload =>
+      _lastRoutes.whereType<QrRoute>().firstOrNull?.payload;
 
   @override
   SendJob build() => const SendJob();
@@ -240,6 +248,16 @@ class SendJobNotifier extends Notifier<SendJob> {
         status: e.pinRequired ? SendStatus.needsPin : SendStatus.failed,
         error: e.declined ? 'declined' : e.message,
       );
+    } on SocketException catch (e, stack) {
+      // Connection refused or timed out: the device is gone or unreachable.
+      if (_cancelled) return;
+      ref.read(appLogProvider)?.error('send', e, stack);
+      state = state.copyWith(status: SendStatus.failed, error: 'unreachable');
+    } on HandshakeException catch (e, stack) {
+      // The device answered with a different identity than the one chosen.
+      if (_cancelled) return;
+      ref.read(appLogProvider)?.error('send', e, stack);
+      state = state.copyWith(status: SendStatus.failed, error: 'unreachable');
     } catch (e, stack) {
       if (_cancelled) return;
       ref.read(appLogProvider)?.error('send', e, stack);
@@ -263,6 +281,7 @@ class SendJobNotifier extends Notifier<SendJob> {
     final manager = ref.read(transportManagerProvider);
 
     _cancelled = false;
+    _lastRoutes = routes;
     final first = routes.first;
     state = SendJob(
       status: SendStatus.connecting,
@@ -377,4 +396,15 @@ final webShareProvider = NotifierProvider<WebShareNotifier, WebShareStatus?>(
 final transportManagerProvider = Provider<TransportManager?>((ref) {
   if (kIsWeb || !Platform.isAndroid) return null;
   return TransportManager(PigeonTransportBackend());
+});
+
+/// What is being received right now (or was just received), or null.
+final receiveSnapshotProvider = StreamProvider<ReceiveSnapshot?>((ref) async* {
+  final service = await ref.watch(localSendServiceProvider.future);
+  if (service == null) {
+    yield null;
+    return;
+  }
+  yield service.receive.current;
+  yield* service.receive.stream;
 });

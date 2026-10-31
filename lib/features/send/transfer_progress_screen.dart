@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,6 +7,8 @@ import '../../core/format.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/transfer/transfer_providers.dart';
+import '../../core/transport/transport_manager.dart';
+import '../../core/widgets/transfer_widgets.dart';
 import '../../core/widgets/zajel_widgets.dart';
 import '../../l10n/l10n.dart';
 import '../history/history_store.dart';
@@ -66,6 +69,44 @@ class _TransferProgressScreenState
     await ref.read(sendJobProvider.notifier).send(job.target!, pin: pin);
   }
 
+  /// When joining the hotspot automatically fails (some phones refuse it), the
+  /// user can join it in the system's Wi-Fi settings; the send then continues.
+  Future<void> _joinManually() async {
+    final notifier = ref.read(sendJobProvider.notifier);
+    final payload = notifier.lastQrPayload;
+    if (payload == null) return;
+    final l10n = context.l10n;
+    final connected = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.joinManually),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.joinManuallyIntro),
+            const SizedBox(height: 16),
+            _CopyField(label: l10n.qrNetworkLabel, value: payload.ssid),
+            const SizedBox(height: 8),
+            _CopyField(label: l10n.joinPassword, value: payload.passphrase),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.joinConnected),
+          ),
+        ],
+      ),
+    );
+    if (connected != true || !mounted) return;
+    await notifier.sendVia([QrRoute(payload, alreadyJoined: true)]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -86,6 +127,8 @@ class _TransferProgressScreenState
               at: DateTime.now(),
             ),
         ]);
+        // A finished send must not leave its files selected for the next one.
+        ref.read(selectedFilesProvider.notifier).clear();
         context.go(AppRoutes.done);
       }
       if (status == SendStatus.needsPin) _askPin();
@@ -137,10 +180,12 @@ class _TransferProgressScreenState
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                Text(
-                                  target.address.address,
-                                  style: theme.textTheme.bodySmall,
-                                ),
+                                // Before the route is set up there is no address yet.
+                                if (!target.address.isLoopback)
+                                  Text(
+                                    target.address.address,
+                                    style: theme.textTheme.bodySmall,
+                                  ),
                               ],
                             ),
                           ),
@@ -159,13 +204,24 @@ class _TransferProgressScreenState
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            job.error == 'declined'
+                            job.error == 'unreachable'
+                                ? l10n.deviceGone
+                                : job.error == 'declined'
                                 ? l10n.declinedByReceiver
                                 : transportFailureOf(job.error) != null
                                 ? transportMessage(l10n, transportFailureOf(job.error)!)
                                 : '${l10n.sendFailed}\n${job.error ?? ''}',
                             textAlign: TextAlign.center,
                           ),
+                          if (transportFailureOf(job.error) != null &&
+                              ref.read(sendJobProvider.notifier).lastQrPayload != null) ...[
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              icon: const Icon(Icons.wifi_password),
+                              label: Text(l10n.joinManually),
+                              onPressed: _joinManually,
+                            ),
+                          ],
                         ],
                       ),
                     )
@@ -248,6 +304,11 @@ class _TransferProgressScreenState
                         ],
                       ),
                     ),
+                  if (!failed)
+                    SlowLinkHint(
+                      bytesPerSecond: job.bytesPerSecond,
+                      transferredBytes: job.sentBytes,
+                    ),
                   const SizedBox(height: 22),
                   Row(
                     children: [
@@ -298,6 +359,41 @@ class _TransferProgressScreenState
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A labelled value with a copy button, for a network name or password.
+class _CopyField extends StatelessWidget {
+  const _CopyField({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: theme.textTheme.bodySmall),
+              SelectableText(
+                value,
+                textDirection: TextDirection.ltr,
+                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.copy),
+          tooltip: context.l10n.copy,
+          onPressed: () => Clipboard.setData(ClipboardData(text: value)),
+        ),
+      ],
     );
   }
 }

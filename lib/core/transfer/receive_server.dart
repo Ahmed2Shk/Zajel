@@ -736,6 +736,9 @@ class ReceiveServer {
   /// must present either [token] (carried in the QR code) or [pin] (shown under
   /// it). This replaces the permanent PIN while armed, because showing the QR
   /// code is the owner's explicit invitation.
+  /// Ends the current session and removes its partial files.
+  Future<void> cancelSession() => _abortSession(cancelled: true);
+
   void armPairing({required String token, required String pin}) {
     _pairing = (token: token, pin: pin);
   }

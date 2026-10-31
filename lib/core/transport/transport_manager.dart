@@ -116,9 +116,13 @@ class DirectRoute extends PeerRoute {
 }
 
 class QrRoute extends PeerRoute {
-  const QrRoute(this.payload);
+  const QrRoute(this.payload, {this.alreadyJoined = false});
 
   final PairingPayload payload;
+
+  /// The user joined the hotspot by hand in the system settings, so the app
+  /// must not try to join it again.
+  final bool alreadyJoined;
 
   @override
   TransportKind get kind => TransportKind.hotspotQr;
@@ -329,9 +333,9 @@ class TransportManager {
           via: TransportKind.wifiDirect,
         );
 
-      case QrRoute(:final payload):
+      case QrRoute(:final payload, :final alreadyJoined):
         await _ensureReady(TransportKind.hotspotQr);
-        await backend.joinNetwork(payload.ssid, payload.passphrase);
+        if (!alreadyJoined) await backend.joinNetwork(payload.ssid, payload.passphrase);
         return PeerEndpoint(
           address: InternetAddress(payload.ip),
           port: payload.port,
@@ -433,7 +437,7 @@ class TransportManager {
 
   Future<void> stopAdvertisingDirect() => backend.stopDirectReceiver();
 
-  Future<List<DirectPeer>> findDirectPeers({Duration timeout = const Duration(seconds: 6)}) async {
+  Future<List<DirectPeer>> findDirectPeers({Duration timeout = const Duration(seconds: 15)}) async {
     await _ensureReady(TransportKind.wifiDirect);
     return backend.discoverDirectPeers(timeout);
   }
