@@ -54,6 +54,8 @@ class DirectController extends Notifier<DirectState> {
     state = state.copyWith(searching: true, clearFailure: true);
     try {
       final peers = await manager.findDirectPeers();
+      // The sheet or screen may have closed during the search.
+      if (!ref.mounted) return;
       // Our own advertisement can show up too.
       final self = ref.read(localSendServiceProvider).value?.device.fingerprint;
       state = state.copyWith(
@@ -64,6 +66,7 @@ class DirectController extends Notifier<DirectState> {
         ],
       );
     } on TransportException catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(searching: false, failure: e.reason);
     }
   }
@@ -85,9 +88,16 @@ class DirectController extends Notifier<DirectState> {
       } else {
         await manager.stopAdvertisingDirect();
       }
+      if (!ref.mounted) {
+        // The screen closed while the group was being created: nobody is left
+        // to stop it later, so stop it now.
+        if (visible) await manager.stopAdvertisingDirect();
+        return;
+      }
       _advertisingManager = visible ? manager : null;
       state = state.copyWith(visible: visible, clearFailure: true);
     } on TransportException catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(failure: e.reason);
     }
   }

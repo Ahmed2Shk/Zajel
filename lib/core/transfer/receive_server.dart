@@ -358,19 +358,28 @@ class ReceiveServer {
     // If the sender seems to hang before the first byte, this shows whether the
     // time went into creating the part files.
     onNote?.call('prepare-upload ready after ${prepareWatch.elapsedMilliseconds} ms');
-    await _json(
-      request,
-      200,
-      PrepareUploadResponse(
-        sessionId: session.id,
-        files: {for (final e in session.files.entries) e.key: e.value.token},
-      ).toJson(),
-      headers: {
-        if (extensions) zajelExtensionHeader: zajelExtensionVersion,
-        zajelDataPortHeader: ?(dataPort == null ? null : '$dataPort'),
-        if (extensions) zajelTarTokenHeader: session.tarToken,
-      },
-    );
+    try {
+      await _json(
+        request,
+        200,
+        PrepareUploadResponse(
+          sessionId: session.id,
+          files: {for (final e in session.files.entries) e.key: e.value.token},
+        ).toJson(),
+        headers: {
+          if (extensions) zajelExtensionHeader: zajelExtensionVersion,
+          zajelDataPortHeader: ?(dataPort == null ? null : '$dataPort'),
+          if (extensions) zajelTarTokenHeader: session.tarToken,
+        },
+      );
+    } catch (_) {
+      // The sender left before it got the answer (its network dropped), so it
+      // can never upload. Free the slot now: otherwise its next try is refused
+      // with 409 "Blocked by another session" until the idle timeout.
+      onNote?.call('session ended: the sender did not get the answer');
+      await _abortSession(cancelled: true);
+      rethrow;
+    }
   }
 
   /// Checks `sessionId`, `fileId` and `token` against the active session and

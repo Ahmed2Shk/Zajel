@@ -40,6 +40,8 @@ class _BenchmarkScreenState extends ConsumerState<BenchmarkScreen> {
 
   Future<void> _run() async {
     final peer = _peer;
+    // Read before any await: the user may leave the screen during the test.
+    final log = ref.read(appLogProvider);
     final service = await ref.read(localSendServiceProvider.future);
     if (peer == null || service == null) return;
 
@@ -68,7 +70,7 @@ class _BenchmarkScreenState extends ConsumerState<BenchmarkScreen> {
           : (cpuAfter - cpuBefore) / wall.elapsedMilliseconds * 100;
       if (mounted) setState(() => _result = _Result(benchmark, cpu));
     } catch (e, stack) {
-      ref.read(appLogProvider)?.error('benchmark', e, stack);
+      log?.error('benchmark', e, stack);
       if (mounted) {
         setState(() {
           _failed = true;

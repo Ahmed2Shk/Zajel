@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'package:zajel/core/discovery/multicast_discovery.dart';
 import 'package:zajel/core/router/app_router.dart';
 import 'package:zajel/core/transfer/localsend_service.dart';
 import 'package:zajel/core/transfer/protocol_models.dart';
+import 'package:zajel/core/transfer/receive_server.dart';
 import 'package:zajel/core/transfer/send_client.dart';
 import 'package:zajel/core/transfer/transfer_providers.dart';
 import 'package:zajel/core/transport/pairing_payload.dart';
@@ -144,6 +146,41 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(service.isPairingArmed, isFalse);
       expect(backend.calls, contains('stopHotspot'));
+    });
+
+    testWidgets('accepting a transfer opens the receiving screen without closing the hotspot', (tester) async {
+      // Regression: the receiving screen used to replace the QR screen, which
+      // stopped the hotspot the sender had just joined, a moment after Accept.
+      final service = await _startService(tester);
+      final backend = FakeTransportBackend();
+      final incoming = StreamController<PendingIncoming>.broadcast();
+      addTearDown(incoming.close);
+      final container = await _pump(tester, service: service, overrides: [
+        transportManagerProvider.overrideWithValue(_manager(backend)),
+        incomingTransferProvider.overrideWith((ref) => incoming.stream),
+      ]);
+      await _go(tester, container, AppRoutes.qrShow);
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(backend.calls, contains('startHotspot'));
+
+      final pending = PendingIncoming(
+        IncomingTransfer(
+          sender: DeviceInfo(alias: 'Sara phone', fingerprint: 'b' * 64),
+          senderAddress: InternetAddress('192.168.43.2'),
+          files: const {
+            'f': FileMetadata(id: 'f', fileName: 'photo.jpg', size: 10, fileType: 'image'),
+          },
+        ),
+      );
+      incoming.add(pending);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('قبول'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(find.text('جاري الاستقبال'), findsWidgets, reason: 'the receiving screen is shown');
+      expect(backend.calls, isNot(contains('stopHotspot')), reason: 'the transfer runs on this hotspot');
     });
 
     for (final (name, configure, message) in <(String, void Function(FakeTransportBackend), String)>[

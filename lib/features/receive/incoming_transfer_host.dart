@@ -38,10 +38,15 @@ class IncomingTransferHost extends ConsumerWidget {
         ).then((_) async {
           // Once the user accepts, show the receiving screen at once, so they
           // can see the transfer, its speed and where the files are saved.
+          //
+          // Pushed on top, never "go": the screen underneath may be the one
+          // that owns the network the transfer runs on (the QR hotspot, or
+          // being visible over Wi-Fi Direct). Replacing it would close that
+          // network a moment after Accept, and the transfer with it.
           final accepted = await pending.decision;
           final context = rootNavigatorKey.currentContext;
           if (accepted != null && context != null && context.mounted) {
-            GoRouter.of(context).go(AppRoutes.receive);
+            unawaited(GoRouter.of(context).push(AppRoutes.receive));
           }
         }),
       );
