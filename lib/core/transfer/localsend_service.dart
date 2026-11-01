@@ -112,6 +112,7 @@ class LocalSendService {
       nativeData: nativeData,
       pin: pin,
       onError: log == null ? null : (e, st) => log.error('receive', e, st),
+      onNote: log == null ? null : (note) => log.info('receive', note),
       onIncoming: (transfer) => service._askUser(transfer),
       onDeviceRegistered: (peer, address) =>
           service._remember(DiscoveredDevice(peer, address)),
@@ -198,6 +199,12 @@ class LocalSendService {
     }
     try {
       await _platform?.startTransferService(title, text);
+    } catch (e, stack) {
+      // Without the service the transfer still runs while the app is open.
+      _log?.error('service', e, stack);
+    }
+    try {
+      await _platform?.setKeepScreenOn(true);
     } catch (_) {}
   }
 
@@ -206,6 +213,9 @@ class LocalSendService {
     if (--_activeTransfers > 0) return;
     try {
       await _platform?.stopTransferService();
+    } catch (_) {}
+    try {
+      await _platform?.setKeepScreenOn(false);
     } catch (_) {}
   }
 
@@ -291,6 +301,9 @@ class LocalSendService {
       _activeTransfers = 0;
       try {
         await _platform?.stopTransferService();
+      } catch (_) {}
+      try {
+        await _platform?.setKeepScreenOn(false);
       } catch (_) {}
     }
     try {

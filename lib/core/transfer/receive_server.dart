@@ -139,6 +139,7 @@ class ReceiveServer {
     this.sessionIdleTimeout = const Duration(minutes: 2),
     this.nativeData,
     this.onError,
+    this.onNote,
   });
 
   final DeviceIdentity identity;
@@ -160,6 +161,9 @@ class ReceiveServer {
 
   /// Called with unexpected errors (not the expected 4xx answers), for logging.
   final void Function(Object error, StackTrace stack)? onError;
+
+  /// Plain-text notes about the session (who ended it, which data path), for the log.
+  final void Function(String note)? onNote;
   int? _dataPort;
 
   /// A session with no traffic for this long is dropped, so a sender that
@@ -327,6 +331,10 @@ class ReceiveServer {
     // With a native data server, each file gets its part file now and the
     // server is told who may write to it.
     final dataPort = extensions ? _dataPort : null;
+    onNote?.call(
+      'session started: zajel extensions=$extensions, native data port=${dataPort != null}, '
+      'files=${session.files.length}',
+    );
     if (dataPort != null) {
       try {
         for (final entry in session.files.entries) {
@@ -623,7 +631,10 @@ class ReceiveServer {
   void _touch() {
     _idleTimer?.cancel();
     if (_session == null) return;
-    _idleTimer = Timer(sessionIdleTimeout, () => _abortSession(cancelled: true));
+    _idleTimer = Timer(sessionIdleTimeout, () {
+      onNote?.call('session ended: no data for ${sessionIdleTimeout.inSeconds} s');
+      _abortSession(cancelled: true);
+    });
   }
 
   /// Which byte ranges of a file have arrived, so a sender that lost its
@@ -691,6 +702,7 @@ class ReceiveServer {
           sink.add(piece);
           received += piece.length;
           _touch();
+          _events.add(FileProgress(session.id, header.name, received, file.meta.size));
         }
         await sink.close();
       } catch (_) {
@@ -735,6 +747,7 @@ class ReceiveServer {
     if (session == null || request.uri.queryParameters['sessionId'] != session.id) {
       throw const _HttpError(403, 'Invalid session');
     }
+    onNote?.call('session ended: cancelled by the sender');
     await _abortSession(cancelled: true);
     await _empty(request, 200);
   }

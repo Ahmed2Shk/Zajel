@@ -534,6 +534,12 @@ interface PlatformApi {
   fun openPublished(uri: String, mimeType: String): Boolean
   /** Wi-Fi facts for the connection in use: band, link speed and signal. */
   fun getWifiInfo(): NativeWifiInfo?
+  /**
+   * Keeps the screen on while a transfer runs (the phone's screen timeout
+   * would otherwise turn it off after 15-30 seconds, and a sleeping screen
+   * slows the Wi-Fi radio on many phones).
+   */
+  fun setKeepScreenOn(keepOn: Boolean)
 
   companion object {
     /** The codec used by PlatformApi. */
@@ -725,6 +731,24 @@ interface PlatformApi {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
               listOf(api.getWifiInfo())
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.PlatformApi.setKeepScreenOn$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val keepOnArg = args[0] as Boolean
+            val wrapped: List<Any?> = try {
+              api.setKeepScreenOn(keepOnArg)
+              listOf(null)
             } catch (exception: Throwable) {
               PlatformApiPigeonUtils.wrapError(exception)
             }

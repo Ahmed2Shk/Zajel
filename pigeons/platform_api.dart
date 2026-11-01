@@ -66,6 +66,11 @@ abstract class PlatformApi {
 
   /// Wi-Fi facts for the connection in use: band, link speed and signal.
   NativeWifiInfo? getWifiInfo();
+
+  /// Keeps the screen on while a transfer runs (the phone's screen timeout
+  /// would otherwise turn it off after 15-30 seconds, and a sleeping screen
+  /// slows the Wi-Fi radio on many phones).
+  void setKeepScreenOn(bool keepOn);
 }
 /// The Android data path. A TLS server written in Kotlin receives file chunks
 /// straight from the socket onto the disk with `FileChannel`, so file bytes

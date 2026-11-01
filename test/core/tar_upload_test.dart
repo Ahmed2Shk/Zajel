@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zajel/core/transfer/protocol_models.dart';
+import 'package:zajel/core/transfer/receive_server.dart';
 import 'package:zajel/core/transfer/send_client.dart';
 import 'package:zajel/core/transfer/tar_stream.dart';
 
@@ -81,6 +82,33 @@ void main() {
       expect(events.where((e) => e.runtimeType.toString() == 'FileReceived'), hasLength(30));
       expect(events.last.runtimeType.toString(), 'SessionEnded');
       expect(leftovers(), isEmpty);
+    });
+
+    test('the receiver sees progress for files in an archive, ending at each size', () async {
+      harness = await TransferHarness.start();
+      final files = [await SendFile.fromPath(
+        (await writeTestFile(source, 'big.bin', 300 * 1024, seed: 9)).path,
+        id: 'big',
+        name: 'big.bin',
+      )];
+      final second = await SendFile.fromPath(
+        (await writeTestFile(source, 'two.bin', 10 * 1024, seed: 3)).path,
+        id: 'two',
+        name: 'two.bin',
+      );
+      files.add(second);
+      final progress = <String, int>{};
+      h().server.events.listen((e) {
+        if (e is FileProgress) progress[e.fileId] = e.received;
+      });
+
+      final session = await h().prepare(files);
+      await h().sender.upload(session: session, files: files);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(progress.keys, containsAll(['big', 'two']));
+      expect(progress['big'], 300 * 1024);
+      expect(progress['two'], 10 * 1024);
     });
 
     test('progress reaches each file size', () async {

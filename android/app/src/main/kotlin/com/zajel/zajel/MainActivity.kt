@@ -130,6 +130,13 @@ private class PlatformApiImpl(
 ) : PlatformApi {
     private var multicastLock: WifiManager.MulticastLock? = null
 
+    override fun setKeepScreenOn(keepOn: Boolean) {
+        activity.runOnUiThread {
+            val flag = android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            if (keepOn) activity.window.addFlags(flag) else activity.window.clearFlags(flag)
+        }
+    }
+
     override fun getDeviceInfo(): NativeDeviceInfo =
         NativeDeviceInfo(model = Build.MODEL, sdkInt = Build.VERSION.SDK_INT.toLong())
 
