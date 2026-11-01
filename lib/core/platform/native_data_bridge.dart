@@ -5,6 +5,10 @@ import 'platform_api.g.dart';
 typedef NativeChunkHandler =
     Future<int> Function(String sessionId, String fileId, int offset, int length);
 
+/// Called a few times a second with the bytes of a file that are in chunks still
+/// arriving, so progress moves before a whole chunk has landed.
+typedef NativeProgressHandler = void Function(String sessionId, String fileId, int liveBytes);
+
 /// The native (Kotlin) side of the chunked upload data path.
 ///
 /// File bytes go from the socket to the disk inside native code; Dart only
@@ -13,6 +17,9 @@ typedef NativeChunkHandler =
 abstract class NativeDataBridge {
   /// Set by the receiver; invoked after every chunk.
   NativeChunkHandler? onChunk;
+
+  /// Set by the receiver; invoked while chunks arrive.
+  NativeProgressHandler? onProgress;
 
   /// Starts the native server and returns its port.
   Future<int> start(DeviceIdentity identity);
@@ -71,4 +78,8 @@ class PigeonNativeDataBridge extends NativeDataBridge implements NativeDataCallb
     if (handler == null) return 500;
     return handler(sessionId, fileId, offset, length);
   }
+
+  @override
+  void onNativeProgress(String sessionId, String fileId, int liveBytes) =>
+      onProgress?.call(sessionId, fileId, liveBytes);
 }

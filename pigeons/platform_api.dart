@@ -94,6 +94,11 @@ abstract class NativeDataCallbacks {
   /// with: 200 to accept, 422 for a checksum failure on the last chunk.
   @async
   int onNativeChunk(String sessionId, String fileId, int offset, int length);
+
+  /// Bytes of this file received so far in chunks that are still arriving,
+  /// summed over all chunks in flight. Sent a few times a second, so the
+  /// receiving screen moves before a whole chunk has landed.
+  void onNativeProgress(String sessionId, String fileId, int liveBytes);
 }
 
 /// Wi-Fi credentials of a hotspot or Wi-Fi Direct group this phone created.

@@ -405,6 +405,14 @@ final receiveSnapshotProvider = StreamProvider<ReceiveSnapshot?>((ref) async* {
     yield null;
     return;
   }
-  yield service.receive.current;
-  yield* service.receive.stream;
+  // Subscribe first, then add the current value: an event that arrives in
+  // between is not lost (the tracker's stream is a broadcast stream).
+  final controller = StreamController<ReceiveSnapshot?>();
+  final subscription = service.receive.stream.listen(controller.add);
+  ref.onDispose(() {
+    subscription.cancel();
+    controller.close();
+  });
+  controller.add(service.receive.current);
+  yield* controller.stream;
 });

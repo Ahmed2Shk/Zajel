@@ -147,6 +147,9 @@ class LocalSendService {
         );
         beginTransfer();
       }
+      if (event is FileReceived) {
+        _log?.info('receive', 'file ${event.fileId} received, moving it to the public folder');
+      }
       if (event is SessionEnded) {
         _log?.info('receive', event.cancelled ? 'session cancelled' : 'session finished');
         endTransfer();

@@ -44,6 +44,9 @@ class MainActivity : FlutterActivity() {
                     }
                 }
             },
+            onProgress = { sessionId, fileId, liveBytes ->
+                main.post { callbacks.onNativeProgress(sessionId, fileId, liveBytes) { } }
+            },
         )
         NativeDataApi.setUp(messenger, NativeDataApiImpl(dataServer!!))
 

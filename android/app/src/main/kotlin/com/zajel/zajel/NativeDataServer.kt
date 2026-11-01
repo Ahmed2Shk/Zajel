@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import javax.net.ssl.KeyManager
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
@@ -44,6 +45,8 @@ import kotlin.math.min
 class NativeDataServer(
     /** (sessionId, fileId, offset, length, reply). Must call [reply] with an HTTP status. */
     private val onChunk: (String, String, Long, Long, (Int) -> Unit) -> Unit,
+    /** (sessionId, fileId, bytes of this file in chunks still arriving). Called a few times a second. */
+    private val onProgress: (String, String, Long) -> Unit = { _, _, _ -> },
 ) {
     private class Upload(
         val sessionId: String,
@@ -52,7 +55,11 @@ class NativeDataServer(
         val path: String,
         val size: Long,
         val senderAddress: String,
-    )
+    ) {
+        /** Bytes received in chunks that have not been reported to Dart as finished yet. */
+        val live = AtomicLong(0)
+        val lastReportMs = AtomicLong(0)
+    }
 
     private val uploads = ConcurrentHashMap<String, Upload>()
     @Volatile private var server: SSLServerSocket? = null
@@ -181,17 +188,33 @@ class NativeDataServer(
             val channel = file.channel
             val buffer = ByteArray(COPY_BUFFER)
             var written = 0L
-            while (written < length) {
-                val want = min(buffer.size.toLong(), length - written).toInt()
-                val n = input.read(buffer, 0, want)
-                if (n < 0) throw IOException("sender closed mid-chunk")
-                writeFully(channel, ByteBuffer.wrap(buffer, 0, n), offset + written)
-                written += n
+            try {
+                while (written < length) {
+                    val want = min(buffer.size.toLong(), length - written).toInt()
+                    val n = input.read(buffer, 0, want)
+                    if (n < 0) throw IOException("sender closed mid-chunk")
+                    writeFully(channel, ByteBuffer.wrap(buffer, 0, n), offset + written)
+                    written += n
+                    upload.live.addAndGet(n.toLong())
+                    reportProgress(upload)
+                }
+            } finally {
+                // From here the chunk counts as finished (or is thrown away): Dart
+                // adds it to what it already holds when it hears about the chunk.
+                upload.live.addAndGet(-written)
             }
         }
 
         val status = askDart(upload, offset, length)
         return reply(output, status, keepAlive = status == 200)
+    }
+
+    /** Tells Dart how much is in flight, at most every [PROGRESS_INTERVAL_MS]. */
+    private fun reportProgress(upload: Upload) {
+        val now = System.nanoTime() / 1_000_000
+        val last = upload.lastReportMs.get()
+        if (now - last < PROGRESS_INTERVAL_MS || !upload.lastReportMs.compareAndSet(last, now)) return
+        onProgress(upload.sessionId, upload.fileId, upload.live.get())
     }
 
     private fun askDart(upload: Upload, offset: Long, length: Long): Int {
@@ -272,6 +295,7 @@ class NativeDataServer(
         private const val IDLE_TIMEOUT_MS = 30_000
         private const val SOCKET_BUFFER = 1 shl 20
         private const val COPY_BUFFER = 256 * 1024
+        private const val PROGRESS_INTERVAL_MS = 200L
         private const val MAX_LINE = 8192
         private const val MAX_HEADERS = 64
         private const val DART_REPLY_TIMEOUT_S = 60L

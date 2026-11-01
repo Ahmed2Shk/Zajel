@@ -111,6 +111,8 @@ class FakeNativeDataBridge extends NativeDataBridge {
       await for (final data in request) {
         await handle.writeFrom(data);
         written += data.length;
+        // The Kotlin server reports bytes in flight while a chunk arrives.
+        onProgress?.call(sessionId!, fileId!, written);
       }
       if (written != length) return answer(400);
     } finally {

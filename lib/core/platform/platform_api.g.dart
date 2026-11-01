@@ -758,6 +758,11 @@ abstract class NativeDataCallbacks {
   /// with: 200 to accept, 422 for a checksum failure on the last chunk.
   Future<int> onNativeChunk(String sessionId, String fileId, int offset, int length);
 
+  /// Bytes of this file received so far in chunks that are still arriving,
+  /// summed over all chunks in flight. Sent a few times a second, so the
+  /// receiving screen moves before a whole chunk has landed.
+  void onNativeProgress(String sessionId, String fileId, int liveBytes);
+
   static void setUp(NativeDataCallbacks? api, {BinaryMessenger? binaryMessenger, String messageChannelSuffix = '',}) {
     messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
     {
@@ -776,6 +781,29 @@ abstract class NativeDataCallbacks {
           try {
             final int output = await api.onNativeChunk(arg_sessionId, arg_fileId, arg_offset, arg_length);
             return wrapResponse(result: output);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          }
+        });
+      }
+    }
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.zajel.NativeDataCallbacks.onNativeProgress$messageChannelSuffix', pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final String arg_sessionId = args[0]! as String;
+          final String arg_fileId = args[1]! as String;
+          final int arg_liveBytes = args[2]! as int;
+          try {
+            api.onNativeProgress(arg_sessionId, arg_fileId, arg_liveBytes);
+            return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
           }          catch (e) {

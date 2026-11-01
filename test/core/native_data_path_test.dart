@@ -62,6 +62,29 @@ void main() {
     expect(session.dataPort, native.port);
   });
 
+  test('progress moves while a chunk is still arriving, not only when it lands', () async {
+    harness = await TransferHarness.start(nativeData: native);
+    final file = await sourceFile('a.bin', 4 * _mib);
+    final seen = <int>[];
+    final subscription = h().server.events.listen((event) {
+      if (event is FileProgress) seen.add(event.received);
+    });
+
+    final session = await h().prepare([file]);
+    await h().sender.upload(
+      session: session,
+      files: [file],
+      options: const UploadOptions(chunkSize: 4 * _mib, parallel: 1),
+    );
+    await subscription.cancel();
+
+    // One 4 MB chunk: without live progress the only value would be 4 MB.
+    expect(seen.where((n) => n > 0 && n < 4 * _mib), isNotEmpty);
+    expect(seen.last, 4 * _mib);
+    expect(seen, orderedEquals([...seen]..sort()), reason: 'the bar never goes back');
+    await expectSameContent(file);
+  });
+
   test('a sender that does not offer extensions is not sent to the data port', () async {
     harness = await TransferHarness.start(nativeData: native);
     h().sender.offerExtensions = false;

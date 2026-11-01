@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zajel — briefing for a second pair of eyes</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font: 10.5pt/1.5 "Segoe UI", Arial, sans-serif; color: #1a1d23; }
+  h1 { font-size: 22pt; margin: 0 0 4pt; }
+  h2 { font-size: 14pt; margin: 20pt 0 6pt; border-bottom: 2px solid #1d6fd8; padding-bottom: 3pt; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 12pt 0 4pt; page-break-after: avoid; }
+  p, li { margin: 3pt 0; }
+  code, pre { font-family: Consolas, "Courier New", monospace; font-size: 9pt; }
+  code { background: #eef1f6; padding: 0 3pt; border-radius: 3px; }
+  pre { background: #f3f5f9; border: 1px solid #d9dee8; border-radius: 5px; padding: 7pt 9pt; white-space: pre-wrap; page-break-inside: avoid; }
+  table { border-collapse: collapse; width: 100%; margin: 6pt 0; page-break-inside: avoid; }
+  th, td { border: 1px solid #cfd5e1; padding: 4pt 6pt; text-align: left; vertical-align: top; font-size: 9.5pt; }
+  th { background: #e8edf6; }
+  .box { border-left: 4px solid #1d6fd8; background: #eef4ff; padding: 6pt 10pt; margin: 8pt 0; page-break-inside: avoid; }
+  .warn { border-left-color: #d98a00; background: #fff6e5; }
+  .bad { border-left-color: #c62828; background: #fdecec; }
+  .ar { direction: rtl; unicode-bidi: embed; font-family: "Segoe UI", Tahoma, Arial, sans-serif; }
+  .small { font-size: 9pt; color: #555; }
+</style>
+</head>
+<body>
+
+<h1>Zajel (زاجل) — project briefing</h1>
+<p class="small">For a second reviewer (Gemini). Written 2026-11-01 from the repository at commit <code>af7b01c</code> plus the fixes described in section 6 (they are in the next commit, the one after <code>af7b01c</code>).
+Everything marked <b>unverified</b> has not been run on a phone.</p>
+
+<div class="box">
+<b>What is being asked.</b> One bug is still open after three rounds of phone testing: on the <b>receiving</b> phone the new "receiving" screen
+stays at <b>0%</b> and after a few seconds the transfer screen goes away on <b>both</b> phones. Section 5 holds everything known about it,
+section 6 the fix just written, and section 8 the specific questions. Please read the code listed in section 4 and tell us what we are missing.
+</div>
+
+<h2>1. The app in one paragraph</h2>
+<p>Zajel is an offline, ad-free file-transfer app for Android (iOS and desktop come later), Arabic-first (RTL) with English.
+It is wire-compatible with the <b>LocalSend v2.1 protocol</b> (<code>https://github.com/localsend/protocol</code>) and adds optional
+"Zajel extensions" (parallel chunked upload, tar bundles for many small files, a native Kotlin data path) that are negotiated by HTTP headers, so stock LocalSend apps still work.
+Flutter 3.38 / Dart 3.10, Riverpod 3, go_router, freezed, Pigeon for all native calls, minSdk 26. About 9,700 lines of Dart, 2,400 of Kotlin, 4,800 of tests (325 tests, all passing; <code>flutter analyze</code> clean).</p>
+
+<h3>Hard rules (from CLAUDE.md — do not suggest breaking them)</h3>
+<ul>
+  <li>All transfers use TLS (self-signed certificate per device, identity = SHA-256 fingerprint of the DER certificate). The only plain-HTTP thing is the optional browser share page, which warns the user.</li>
+  <li>No ads, no analytics, no network calls to any server. Libraries that bundle telemetry (e.g. Google ML Kit) are forbidden; an automated test scans manifest, pubspec, Dart code and every plugin's Gradle files.</li>
+  <li>Native code is reached only through <b>Pigeon</b> (no raw MethodChannel strings). On Android the file bytes never pass through Dart on the fast path: Kotlin writes with <code>FileChannel</code>; never load a whole file into memory.</li>
+  <li>Received file names are sanitised (no <code>..</code>, absolute paths, control characters). No exported FileProvider.</li>
+  <li>Colors only through ThemeData tokens; all user-visible strings through ARB files (<code>lib/l10n/app_ar.arb</code> is the template).</li>
+</ul>
+
+<h2>2. Architecture</h2>
+<table>
+<tr><th>Area</th><th>Files</th><th>Role</th></tr>
+<tr><td>Discovery</td><td><code>lib/core/discovery/multicast_discovery.dart</code>, <code>device_probe.dart</code></td><td>UDP multicast <code>224.0.0.167:53317</code> announcements; <code>probeDevice</code> = fingerprint-pinned HTTPS <code>GET /info</code> to check a listed device is alive.</td></tr>
+<tr><td>Receive server</td><td><code>lib/core/transfer/receive_server.dart</code></td><td>Dart <code>HttpServer</code> (TLS): <code>/info /register /prepare-upload /upload /cancel</code> + Zajel routes (progress, benchmark, tar). Owns the session state machine and emits <code>ReceiveEvent</code>s (<code>SessionStarted, FileProgress, FileReceived, SessionEnded</code>).</td></tr>
+<tr><td>Send client</td><td><code>lib/core/transfer/send_client.dart</code></td><td>prepare-upload, then upload: plain stream for small files, tar for many small files, <b>8 MiB chunks × 4 parallel connections</b> for big files against a Zajel receiver.</td></tr>
+<tr><td>Native data path</td><td><code>android/.../NativeDataServer.kt</code>, <code>lib/core/platform/native_data_bridge.dart</code></td><td>Kotlin TLS server on a random port (advertised in header <code>x-zajel-data-port</code>). Writes chunk bodies straight to the part file; after each chunk asks Dart (<code>onNativeChunk</code>) which answers with the HTTP status. <b>New:</b> <code>onNativeProgress</code> every 200 ms.</td></tr>
+<tr><td>Service facade</td><td><code>lib/core/transfer/localsend_service.dart</code></td><td>Starts server + discovery, accept/decline queue (<code>PendingIncoming</code>, 60 s timeout), foreground-service begin/end, owns the <code>ReceiveTracker</code>.</td></tr>
+<tr><td>Receive UI model</td><td><code>lib/core/transfer/receive_tracker.dart</code></td><td>Turns <code>ReceiveEvent</code>s into a <code>ReceiveSnapshot</code> stream; publishes each finished file to a public folder via Kotlin <code>publishFile</code> (MediaStore).</td></tr>
+<tr><td>Send UI model</td><td><code>lib/core/transfer/transfer_providers.dart</code> (<code>SendJobNotifier</code>)</td><td>State of the current send, retries (5×, 2 s) on transient errors, speed calculation.</td></tr>
+<tr><td>Screens</td><td><code>lib/features/receive/{incoming_transfer_host,receive_screen}.dart</code>, <code>lib/features/send/transfer_progress_screen.dart</code></td><td>Accept dialog → receiving screen; sender progress screen.</td></tr>
+<tr><td>Router-free transports</td><td><code>lib/core/transport/transport_manager.dart</code>, <code>WifiTransport.kt</code></td><td>Wi-Fi Direct &gt; LocalOnlyHotspot via QR &gt; same LAN, with fallback.</td></tr>
+</table>
+
+<h3>Life of a transfer (Zajel → Zajel, big file)</h3>
+<ol>
+  <li>Sender: <code>POST /prepare-upload</code> with file list and header <code>x-zajel-extension</code>.</li>
+  <li>Receiver (<code>_prepareUpload</code>): calls <code>onIncoming</code> → UI dialog (accept/decline, 60 s). On accept it creates <code>_Session</code>, <b>emits <code>SessionStarted</code></b>, starts the idle timer (<code>sessionIdleTimeout</code> = 2 min, reset by <code>_touch()</code>), reserves a <code>.zajel-part</code> file per file, registers each with the native server, answers with session id, per-file tokens, <code>x-zajel-data-port</code>.</li>
+  <li><code>IncomingTransferHost</code> (after the dialog closes with "accepted") calls <code>GoRouter.go('/receive')</code>. Meanwhile the sender has navigated to its own progress screen.</li>
+  <li>Sender uploads 8 MiB chunks over 4 TLS connections to the data port. Kotlin writes each chunk to disk, then <code>onNativeChunk(sessionId, fileId, offset, length)</code> → Dart <code>_commitChunk</code> records the range in a <code>RangeSet</code>, emits <code>FileProgress</code>; when the set is complete it renames the part file and emits <code>FileReceived</code>.</li>
+  <li>When every file is done: <code>SessionEnded(cancelled:false)</code>. <code>ReceiveTracker</code> meanwhile calls <code>publishFile</code> per finished file (MediaStore copy, then deletes the private copy).</li>
+</ol>
+
+<h2>3. Status after the last phone test</h2>
+<table>
+<tr><th>Item</th><th>Status</th></tr>
+<tr><td>LAN transfer via device icon</td><td>Works, but ~1 MB/s on the user's router. Via the QR hotspot (direct phone-to-phone) ~30 MB/s. Our reading: router/AP per-client limit (user's network is 2.2.x.x), not the code. <b>Unverified.</b> The app now shows Wi-Fi band/link speed and a hint when &lt; 3 MB/s.</td></tr>
+<tr><td>Files visible in gallery / file manager</td><td>Fixed — user confirmed.</td></tr>
+<tr><td>QR pairing, Wi-Fi Direct, speed test, stale devices, selection reset</td><td>Changed in round 2. The user then reported "no problem except the receive screen", without saying which transport was used for each check — so treat Wi-Fi Direct as <b>unconfirmed</b>.</td></tr>
+<tr><td><b>Receiving screen</b></td><td><b>Open bug</b> — see section 5.</td></tr>
+</table>
+
+<h2>4. Code to read for the open bug</h2>
+<ol>
+  <li><code>lib/core/transfer/receive_server.dart</code> — <code>_prepareUpload</code> (≈ line 276), <code>_onNativeChunk</code> / <code>_onNativeProgress</code>, <code>_commitChunk</code>, <code>_finishChunked</code>, <code>_endSessionIfFinished</code>, <code>_touch</code> (idle timer), <code>_abortSession</code>.</li>
+  <li><code>android/app/src/main/kotlin/com/zajel/zajel/NativeDataServer.kt</code> — <code>serveOne</code> read loop and <code>askDart</code> (60 s timeout waiting for Dart's answer).</li>
+  <li><code>lib/core/transfer/receive_tracker.dart</code> and <code>lib/features/receive/receive_screen.dart</code>; provider <code>receiveSnapshotProvider</code> in <code>transfer_providers.dart</code>.</li>
+  <li><code>lib/features/receive/incoming_transfer_host.dart</code> (navigation after accept).</li>
+  <li><code>lib/core/transfer/send_client.dart</code> <code>_uploadChunked</code> / <code>_sendChunk</code> and <code>SendJobNotifier.send</code>; <code>lib/features/send/transfer_progress_screen.dart</code>.</li>
+  <li><code>android/.../TransferService.kt</code> (foreground service, WifiLock, WakeLock) and <code>MainActivity.kt</code> (callback wiring, <code>publishFile</code>).</li>
+</ol>
+
+<h2>5. The open bug — exactly what we know</h2>
+<div class="box bad">
+<p class="ar"><b>User report (verbatim, Arabic):</b> «ولا مشكلة الا مشكلة شاشة الاستقبال عند الطرف الاخر و برضو فيها مشكلة لمن تفتح الشاشة ما ببين تقدم بس بضل 0% و بعد كم ثانية بطفي عند الطرفين»</p>
+<p><b>Translation:</b> "No problem except the receiving screen on the other device. Also it has a problem: when the screen opens it shows no progress, it just stays at 0%, and after a few seconds it turns off on both devices." (The same user confirmed that files do arrive and appear in the file manager.)</p>
+</div>
+<p><b>Facts</b></p>
+<ul>
+  <li>Files <i>do</i> arrive and are published to the public folder, so the transfer itself completes at least in some runs.</li>
+  <li>We do not know the file sizes used, whether the link was the 1 MB/s router path or the 30 MB/s QR path, or what "turns off" looked like (screen leaves to Home? turns into the "done" state? the whole phone screen sleeps? an error card?). <b>We have no log from that run.</b> The app has Settings → export log; <code>adb logcat -s ZajelWifi flutter</code> would also help.</li>
+  <li>Before the round-2 build, the receiver had no receiving screen at all, so this is the first time anyone looked at receiver-side progress.</li>
+</ul>
+
+<h3>Hypotheses, most likely first</h3>
+<table>
+<tr><th>#</th><th>Hypothesis</th><th>Evidence / reasoning</th></tr>
+<tr><td>H1</td><td><b>Receiver progress is chunk-granular on the native path.</b> Kotlin only tells Dart when a whole 8 MiB chunk is on disk. With 4 parallel chunks, a file ≤ 32 MiB shows 0% until all its chunks land at once, then jumps to 100% and the session ends → screens change within seconds.</td><td>Read directly from <code>_commitChunk</code> / <code>NativeDataServer.serveOne</code>; matches "0%… then gone". The sender's own bar moves because it counts bytes handed to its socket. <b>Fix written (section 6).</b></td></tr>
+<tr><td>H2</td><td><b>Idle timer aborts slow transfers.</b> <code>_touch()</code> was only called from Dart-side events, i.e. once per committed chunk. On a slow link (e.g. 100–300 KB/s) one 8 MiB chunk can take more than the 2-minute <code>sessionIdleTimeout</code>; <code>_abortSession(cancelled:true)</code> then ends the session on the receiver, and the sender's next request gets 403 / fails → both screens end.</td><td>Code reading. Would not be "a few seconds" unless the link is very slow, so H1 explains the symptom better; H2 is a real latent bug either way. <b>Fix written</b> (progress callbacks now call <code>_touch()</code>).</td></tr>
+<tr><td>H3</td><td><b>Event-stream race.</b> <code>receiveSnapshotProvider</code> is <code>yield service.receive.current; yield* service.receive.stream;</code> on a <i>broadcast</i> stream. Events emitted in the tiny gap between the two are lost, which could leave the screen stale.</td><td>Window is microseconds; low probability, but trivially removable by emitting the current value on subscribe. <b>Fixed</b> (section 6).</td></tr>
+<tr><td>H4</td><td><b>Android lifecycle.</b> The receiver app is in the foreground but the foreground service (<code>FOREGROUND_SERVICE_DATA_SYNC</code>) could fail to start on Android 14+ (type/permission/notification permission denied), or the sender's Dart isolate could be throttled when its screen turns off.</td><td>No evidence; the phones' Android versions were not recorded. <code>beginTransfer</code> swallows exceptions from <code>startTransferService</code>.</td></tr>
+<tr><td>H5</td><td><b>Sender cancels.</b> Any exception in <code>SendJobNotifier.send</code> shows an error card (not "closing"), but <code>cancel()</code> resets state to <code>SendJob()</code> and the screen returns Home. A cancel from the sender would show "cancelled" on the receiver.</td><td>No evidence.</td></tr>
+<tr><td>H6</td><td><b>Publish step.</b> <code>ReceiveTracker._save</code> awaits Kotlin <code>publishFile</code> (copy to MediaStore, delete source). If it throws or is slow, the file stays "saving" and the session end waits (<code>isOver</code> needs no file in <code>saving</code>).</td><td>User says files appear in the file manager, so publishing works at least for them.</td></tr>
+</table>
+
+<h2>6. Changes made after commit af7b01c</h2>
+<ul>
+  <li><b>Live receive progress.</b> Pigeon <code>NativeDataCallbacks.onNativeProgress(sessionId, fileId, liveBytes)</code>. Kotlin keeps an <code>AtomicLong live</code> per upload, adds every buffer it writes, reports at most every 200 ms, and subtracts the chunk once it is fully written (just before asking Dart about the chunk). Dart <code>_onNativeProgress</code> emits <code>FileProgress(covered + liveBytes)</code> and calls <code>_touch()</code>.</li>
+  <li><code>ReceiveTracker</code> makes the receiving bar monotonic (between "chunk written" and "chunk committed" the two numbers are briefly out of step).</li>
+  <li>Test added: with the fake native bridge, progress values strictly between 0 and one chunk size are seen and never decrease. All 325 tests pass; the Kotlin changes compile but have <b>not run on a phone</b>.</li>
+  <li><code>receiveSnapshotProvider</code> now subscribes to the tracker stream <i>before</i> adding the current value (H3).</li>
+  <li>One extra log line when a file is received.</li>
+</ul>
+
+<h2>7. How to build, run, test</h2>
+<pre>flutter pub get
+flutter analyze
+flutter test                    # 325 tests; slow/network ones are opt-in: ZAJEL_SLOW=1 / ZAJEL_NETWORK=1
+dart run pigeon --input pigeons/platform_api.dart   # regenerates lib/core/platform/platform_api.g.dart and PlatformApi.g.kt
+flutter build apk --release --target-platform android-arm64</pre>
+<p>Windows dev machine, no Mac, only two physical Android phones. Wi-Fi Direct, hotspots, MediaStore and the Kotlin data server cannot be tested without them; the Dart side of the native path is tested with <code>test/support/fake_native_data_bridge.dart</code>.
+Docs: <code>docs/SPEC.md</code> (acceptance criteria), <code>docs/ZAJEL_EXTENSIONS.md</code> (our protocol additions), <code>docs/TRANSPORTS.md</code>, <code>docs/TESTING.md</code> (hand-test checklist), <code>docs/BENCHMARKS.md</code>.</p>
+
+<h2>8. What we would like from you</h2>
+<ol>
+  <li>Read sections 2 and 4 and the listed code. <b>Find a cause of "0% then both screens end" that we have not listed</b>, or confirm H1/H2 and say what else would be needed to make the receive screen trustworthy.</li>
+  <li>Review <code>NativeDataServer.serveOne</code> and <code>ReceiveServer._onNativeChunk/_onNativeProgress</code> for races or leaks (live-byte accounting when a connection drops mid-chunk, a retried chunk, two connections writing different chunks of one file).</li>
+  <li>Review the session lifecycle (<code>_touch</code>, <code>_abortSession</code>, <code>_endSessionIfFinished</code>, <code>PendingIncoming</code> 60 s timeout, <code>IncomingTransferHost</code> navigation) for a path that ends the session or the screen early.</li>
+  <li>Suggest the smallest instrumentation (log lines or on-screen debug text) that would make the next phone test conclusive, given that we can only ask the user to send an exported log.</li>
+  <li>Any Android-specific pitfalls you know for: foreground service type <code>dataSync</code> on Android 14/15, <code>MediaStore</code> publishing from a background thread, <code>WifiNetworkSpecifier</code> + <code>bindProcessToNetwork</code>, Wi-Fi Direct DNS-SD discovery (we call <code>discoverPeers</code> plus repeated <code>discoverServices</code> every 4 s).</li>
+  <li>Please do not propose anything that adds a server, telemetry, cleartext transfer, or a Google/Firebase dependency.</li>
+</ol>
+
+<p class="small">Repository layout and the full history are in git (11 commits). The uploaded repository is private; the user will hand you the zip.</p>
+</body>
+</html>

@@ -150,7 +150,12 @@ class ReceiveTracker {
           final files = [
             for (final f in s.files)
               if (f.id == fileId && f.status != ReceiveFileStatus.saved && f.status != ReceiveFileStatus.saving)
-                f.copyWith(received: received.clamp(0, f.size), status: ReceiveFileStatus.receiving)
+                // Never goes back: a chunk that is committed moves from "in flight"
+                // to "done" and the two numbers are briefly out of step.
+                f.copyWith(
+                  received: received.clamp(f.received, f.size),
+                  status: ReceiveFileStatus.receiving,
+                )
               else
                 f,
           ];

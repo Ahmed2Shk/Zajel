@@ -875,6 +875,28 @@ class NativeDataCallbacks(private val binaryMessenger: BinaryMessenger, private 
       } 
     }
   }
+  /**
+   * Bytes of this file received so far in chunks that are still arriving,
+   * summed over all chunks in flight. Sent a few times a second, so the
+   * receiving screen moves before a whole chunk has landed.
+   */
+  fun onNativeProgress(sessionIdArg: String, fileIdArg: String, liveBytesArg: Long, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.zajel.NativeDataCallbacks.onNativeProgress$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(sessionIdArg, fileIdArg, liveBytesArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(PlatformApiPigeonUtils.createConnectionError(channelName)))
+      } 
+    }
+  }
 }
 /**
  * Router-free transports (SPEC.md, Phase 3). Errors use the codes

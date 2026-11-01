@@ -78,6 +78,9 @@ class _AcceptedFile {
   /// The native data server has written to this file.
   bool nativeTouched = false;
 
+  /// Bytes the native server holds of chunks that are still arriving.
+  int nativeLiveBytes = 0;
+
   RandomAccessFile? _handle;
   Future<void> _writeQueue = Future.value();
 
@@ -200,6 +203,7 @@ class ReceiveServer {
       try {
         _dataPort = await bridge.start(identity);
         bridge.onChunk = _onNativeChunk;
+        bridge.onProgress = _onNativeProgress;
       } catch (_) {
         // No native server: chunks simply go through Dart.
         _dataPort = null;
@@ -499,6 +503,25 @@ class ReceiveServer {
       file.finishing = true;
       await _finishChunked(session, file, fileId);
     }
+  }
+
+  /// Called by the native data server while a chunk is still arriving. Without
+  /// it the receiver would see nothing until a whole 8 MB chunk is on disk, and
+  /// on a slow link the idle timer would end the session in the meantime.
+  void _onNativeProgress(String sessionId, String fileId, int liveBytes) {
+    final session = _session;
+    final file = session?.files[fileId];
+    if (session == null || session.id != sessionId || file == null || file.done) return;
+    file.nativeLiveBytes = liveBytes;
+    _touch();
+    _events.add(
+      FileProgress(
+        session.id,
+        fileId,
+        (file.received.covered + liveBytes).clamp(0, file.meta.size),
+        file.meta.size,
+      ),
+    );
   }
 
   /// Called by the native data server after each chunk it wrote. The returned
