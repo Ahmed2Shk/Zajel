@@ -28,9 +28,18 @@ class ReceiveScreen extends ConsumerWidget {
     final scheme = theme.colorScheme;
     final success = context.zajelColors.success;
     final service = ref.watch(localSendServiceProvider).value;
-    final snapshot = ref.watch(receiveSnapshotProvider).value;
+    final snapshotState = ref.watch(receiveSnapshotProvider);
+    final snapshot = snapshotState.value;
 
     if (snapshot == null) {
+      // The first frame, before the tracker has answered: not the "nothing to
+      // show" page with its OK button.
+      if (snapshotState.isLoading) {
+        return Scaffold(
+          appBar: AppBar(title: Text(l10n.receivingTitle), automaticallyImplyLeading: false),
+          body: const SafeArea(child: Center(child: CircularProgressIndicator())),
+        );
+      }
       return Scaffold(
         appBar: AppBar(title: Text(l10n.receivingTitle)),
         body: SafeArea(

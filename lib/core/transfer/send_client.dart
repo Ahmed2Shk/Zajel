@@ -351,6 +351,10 @@ class SendClient {
                 start,
                 end,
                 (n) {
+                  // From the first byte on, the data port is in use: another
+                  // worker's failed connection must not switch everyone to the
+                  // main port, which would truncate the file under this chunk.
+                  if (onDataPort) dataPortWorked = true;
                   inFlight += n;
                   sent += n;
                   onProgress?.call(file.id, sent);

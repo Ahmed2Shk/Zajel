@@ -153,7 +153,9 @@ class LocalSendService {
       }
       if (event is SessionEnded) {
         _log?.info('receive', event.cancelled ? 'session cancelled' : 'session finished');
-        endTransfer();
+        // Files may still be copying into the gallery: keep the service (and
+        // the screen) alive until they are saved.
+        unawaited(receive.whenSaved().then((_) => endTransfer()));
       }
     });
     _discoverySub = _discovery.devices.listen(_remember);

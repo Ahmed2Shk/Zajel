@@ -210,6 +210,27 @@ void main() {
     expect(native.startCalls, 0);
   });
 
+  test('a Dart-route chunk is refused as soon as native bytes are arriving, before any chunk lands', () async {
+    harness = await TransferHarness.start(nativeData: native);
+    final file = await sourceFile('big.bin', 4 * _mib);
+    final session = await h().prepare([file]);
+
+    // The native server reports bytes of a chunk that is still arriving.
+    native.onProgress!(session.sessionId, 'big.bin', 300 * 1024);
+
+    final client = HttpClient()..badCertificateCallback = (_, _, _) => true;
+    final post = await client.postUrl(Uri.parse(
+      'https://127.0.0.1:${h().server.port}$localSendApiPrefix/upload'
+      '?sessionId=${session.sessionId}&fileId=big.bin&token=${session.tokens['big.bin']}&offset=0',
+    ));
+    post.headers.contentLength = _mib;
+    post.add(List.filled(_mib, 7));
+    final response = await post.close();
+    await response.drain<void>();
+    client.close();
+    expect(response.statusCode, 409, reason: 'opening the part file again would wipe the native bytes');
+  });
+
   test('the native route refuses a Dart-route chunk once it has written', () async {
     harness = await TransferHarness.start(nativeData: native);
     final file = await sourceFile('big.bin', 4 * _mib);

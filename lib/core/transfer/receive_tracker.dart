@@ -114,6 +114,19 @@ class ReceiveTracker {
   final _paths = <String, String>{};
   final _samples = <(DateTime, int)>[];
 
+  var _saving = 0;
+  final _idleWaiters = <Completer<void>>[];
+
+  /// Completes when no received file is still being moved to its public folder.
+  /// The foreground service must stay up until then: copying a big file into
+  /// the gallery can take many seconds after the transfer itself has ended.
+  Future<void> whenSaved() {
+    if (_saving == 0) return Future.value();
+    final waiter = Completer<void>();
+    _idleWaiters.add(waiter);
+    return waiter.future;
+  }
+
   ReceiveSnapshot? get current => _current;
   Stream<ReceiveSnapshot?> get stream => _controller.stream;
 
@@ -185,6 +198,20 @@ class ReceiveTracker {
   Future<void> _save(String sessionId, String fileId, String path) async {
     final file = _current?.files.where((f) => f.id == fileId).firstOrNull;
     if (file == null) return;
+    _saving++;
+    try {
+      await _publishAndRecord(sessionId, fileId, path, file);
+    } finally {
+      if (--_saving == 0) {
+        for (final waiter in _idleWaiters) {
+          waiter.complete();
+        }
+        _idleWaiters.clear();
+      }
+    }
+  }
+
+  Future<void> _publishAndRecord(String sessionId, String fileId, String path, ReceiveFile file) async {
     String? location;
     var published = false;
     try {

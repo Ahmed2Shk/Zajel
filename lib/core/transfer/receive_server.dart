@@ -322,6 +322,7 @@ class ReceiveServer {
     _pairing = null; // a pairing code works once
     _touch();
     _events.add(SessionStarted(session.id, transfer));
+    final prepareWatch = Stopwatch()..start();
 
     // Only a Zajel sender asks for the extension, and only then do we answer.
     final extensions =
@@ -354,6 +355,9 @@ class ReceiveServer {
       }
     }
 
+    // If the sender seems to hang before the first byte, this shows whether the
+    // time went into creating the part files.
+    onNote?.call('prepare-upload ready after ${prepareWatch.elapsedMilliseconds} ms');
     await _json(
       request,
       200,
@@ -504,8 +508,21 @@ class ReceiveServer {
   ) async {
     // A retried chunk lands on the same bytes, so adding it twice is harmless.
     file.received.add(offset, offset + length);
+    onNote?.call(
+      'chunk committed: offset=$offset length=$length covered=${file.received.covered}/${file.meta.size}',
+    );
+    // This chunk moves from "still arriving" to "on disk"; what the other
+    // connections have already written stays counted.
+    if (file.nativeTouched) {
+      file.nativeLiveBytes = file.nativeLiveBytes > length ? file.nativeLiveBytes - length : 0;
+    }
     _events.add(
-      FileProgress(session.id, fileId, file.received.covered, file.meta.size),
+      FileProgress(
+        session.id,
+        fileId,
+        (file.received.covered + file.nativeLiveBytes).clamp(0, file.meta.size),
+        file.meta.size,
+      ),
     );
     if (file.received.isComplete(file.meta.size) && !file.finishing) {
       file.finishing = true;
@@ -520,6 +537,9 @@ class ReceiveServer {
     final session = _session;
     final file = session?.files[fileId];
     if (session == null || session.id != sessionId || file == null || file.done) return;
+    // Bytes are flowing through the native server: Dart must not reopen (and so
+    // truncate) the part file any more, see _allocate.
+    file.nativeTouched = true;
     file.nativeLiveBytes = liveBytes;
     _touch();
     _events.add(

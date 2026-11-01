@@ -11,6 +11,7 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.util.Log
 
 /**
  * Keeps a transfer running with the screen off. Android would otherwise stop
@@ -28,13 +29,27 @@ class TransferService : Service() {
         val text = intent?.getStringExtra(EXTRA_TEXT) ?: ""
         val notification = buildNotification(title, text)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        // Android may refuse to start the foreground state (for example when the
+        // app is not allowed to at that moment). That must not crash the app:
+        // the transfer itself still runs while the app is open.
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+            acquireLocks()
+        } catch (e: Exception) {
+            Log.w("ZajelService", "could not start in the foreground", e)
+            stopSelf(startId)
         }
-        acquireLocks()
         return START_NOT_STICKY
+    }
+
+    /** Android 15 limits how long a data-sync service may run; stop cleanly. */
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        releaseLocks()
+        stopSelf(startId)
     }
 
     override fun onDestroy() {

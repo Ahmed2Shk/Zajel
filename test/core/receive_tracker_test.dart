@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -103,6 +104,33 @@ void main() {
     tracker.handle(SessionStarted('s2', _incoming()));
     tracker.handle(const FileProgress('s1', 'f1', 900, 1000));
     expect(tracker.current!.receivedBytes, 0);
+  });
+
+  test('whenSaved waits for a file that is still being copied to the gallery', () async {
+    final gate = Completer<String?>();
+    final slow = ReceiveTracker(publish: (_, _, _) => gate.future);
+    slow.handle(SessionStarted('s1', _incoming()));
+    slow.handle(const FileReceived('s1', 'f1', '/app/photo.jpg'));
+
+    var waited = false;
+    unawaited(slow.whenSaved().then((_) => waited = true));
+    await Future<void>.delayed(Duration.zero);
+    expect(waited, isFalse, reason: 'the copy has not finished');
+
+    gate.complete('content://media/photo.jpg');
+    await Future<void>.delayed(Duration.zero);
+    expect(waited, isTrue);
+  });
+
+  test('whenSaved is immediate when nothing is being saved', () async {
+    await tracker.whenSaved();
+  });
+
+  test('whenSaved also ends when publishing fails', () async {
+    final failing = ReceiveTracker(publish: (_, _, _) async => throw Exception('no space'));
+    failing.handle(SessionStarted('s1', _incoming()));
+    failing.handle(const FileReceived('s1', 'f1', '/app/photo.jpg'));
+    await failing.whenSaved().timeout(const Duration(seconds: 2));
   });
 
   test('dismiss forgets a finished transfer but not a running one', () {
