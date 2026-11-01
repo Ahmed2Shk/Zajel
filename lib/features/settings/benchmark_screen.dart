@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -52,9 +50,6 @@ class _BenchmarkScreenState extends ConsumerState<BenchmarkScreen> {
       _result = null;
     });
     try {
-      if (!await service.isReachable(peer)) {
-        throw const SocketException('The device did not answer');
-      }
       final cpuBefore = await service.cpuTimeMs();
       final wall = Stopwatch()..start();
       final benchmark = await service.client.benchmark(

@@ -73,7 +73,10 @@ class LocalSendService {
 
   final _incoming = StreamController<PendingIncoming>.broadcast();
   final _devices = <String, DiscoveredDevice>{};
-  final _misses = <String, int>{};
+  final _lastHeard = <String, DateTime>{};
+
+  /// A device not heard from for this long has left (its app was closed).
+  static const deviceExpiry = Duration(seconds: 25);
   Timer? _livenessTimer;
   final _devicesChanged = StreamController<List<DiscoveredDevice>>.broadcast();
   StreamSubscription<DiscoveredDevice>? _discoverySub;
@@ -328,13 +331,13 @@ class LocalSendService {
 
   void _remember(DiscoveredDevice found) {
     _devices[found.info.fingerprint] = found;
-    _misses.remove(found.info.fingerprint); // heard from it just now
+    _lastHeard[found.info.fingerprint] = DateTime.now();
     _devicesChanged.add(devices);
   }
 
   void _forget(String fingerprint) {
     if (_devices.remove(fingerprint) != null) {
-      _misses.remove(fingerprint);
+      _lastHeard.remove(fingerprint);
       _devicesChanged.add(devices);
     }
   }
@@ -347,20 +350,17 @@ class LocalSendService {
     return alive;
   }
 
-  /// Every few seconds, asks each listed device whether it is still there. Two
-  /// misses in a row remove it (one miss can be a lost packet).
+  /// Every few seconds: announce again, so every device answers, and drop the
+  /// ones not heard from for [deviceExpiry]. A device is kept as long as it
+  /// answers; an HTTPS check is not used here because on slow networks it
+  /// timed out and made present devices flash and vanish.
   Future<void> _checkDevices() async {
+    _discovery.announce();
+    final now = DateTime.now();
     for (final device in devices) {
-      final fingerprint = device.info.fingerprint;
-      if (await probeDevice(device)) {
-        _misses.remove(fingerprint);
-      } else {
-        final misses = (_misses[fingerprint] ?? 0) + 1;
-        if (misses >= 2) {
-          _forget(fingerprint);
-        } else {
-          _misses[fingerprint] = misses;
-        }
+      final heard = _lastHeard[device.info.fingerprint];
+      if (heard == null || now.difference(heard) > deviceExpiry) {
+        _forget(device.info.fingerprint);
       }
     }
   }

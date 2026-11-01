@@ -39,17 +39,8 @@ class DiscoveryScreen extends ConsumerWidget {
       return;
     }
 
-    // A device found on the shared Wi-Fi may have closed its app since: ask it
-    // before starting, instead of failing later with a network error.
-    final lan = routes.whereType<LanRoute>().toList();
-    final service = ref.read(localSendServiceProvider).value;
-    if (routes.length == 1 && lan.length == 1 && service != null) {
-      if (!await service.isReachable(lan.first.device)) {
-        messenger.showSnackBar(SnackBar(content: Text(l10n.deviceGone)));
-        return;
-      }
-    }
-    if (!context.mounted) return;
+    // No check first: the transfer screen opens at once and says clearly if
+    // the device cannot be reached.
 
     // The routes are tried fastest first, falling back automatically.
     ref.read(sendJobProvider.notifier).sendVia(routes);
