@@ -75,6 +75,19 @@ class _AcceptedFile {
   int liveBytes = 0;
   bool finishing = false;
 
+  /// One whole-file upload of this file at a time (a resume waits for the
+  /// earlier attempt). Other files of the session are not held up.
+  final wholeGate = _Gate();
+
+  /// When the last byte of a whole-file upload of this file arrived, and how
+  /// many such uploads are running (more than one after a stalled attempt).
+  DateTime lastWholeData = DateTime.now();
+  int wholeRunning = 0;
+
+  /// Bumped when a stalled attempt is left behind, so the next attempt writes
+  /// a part file of its own (Windows cannot reopen a file another handle holds).
+  int partGeneration = 0;
+
   /// The native data server has written to this file.
   bool nativeTouched = false;
 
@@ -112,6 +125,30 @@ class _AcceptedFile {
   }
 }
 
+/// Runs one body at a time, in arrival order. A failed body frees the gate too.
+///
+/// With [abandoned], a waiting body also starts once that says the running one
+/// is dead (its sender went silent without closing the connection), so a
+/// vanished sender cannot block a resume forever.
+class _Gate {
+  Future<void> _last = Future.value();
+
+  Future<T> run<T>(Future<T> Function() body, {bool Function()? abandoned}) {
+    final turn = _waitFor(_last, abandoned).then((_) => body());
+    _last = turn.then((_) {}, onError: (_) {});
+    return turn;
+  }
+
+  static Future<void> _waitFor(Future<void> previous, bool Function()? abandoned) async {
+    if (abandoned == null) return previous;
+    var done = false;
+    unawaited(previous.whenComplete(() => done = true));
+    while (!done && !abandoned()) {
+      await Future.any([previous, Future<void>.delayed(const Duration(milliseconds: 250))]);
+    }
+  }
+}
+
 class _Session {
   _Session(this.id, this.transfer, this.files, this.tarToken);
 
@@ -121,6 +158,10 @@ class _Session {
 
   /// Authorizes the tar upload of small files for this session.
   final String tarToken;
+
+  /// One tar archive at a time: a resumed archive waits for the previous one,
+  /// so it never opens a part file the earlier request is still writing.
+  final tarGate = _Gate();
 
   bool get finished => files.values.every((f) => f.done);
 }
@@ -137,6 +178,7 @@ class ReceiveServer {
     this.pin,
     this.enableChunking = true,
     this.sessionIdleTimeout = const Duration(minutes: 2),
+    this.stallTimeout = const Duration(seconds: 30),
     this.nativeData,
     this.onError,
     this.onNote,
@@ -169,6 +211,10 @@ class ReceiveServer {
   /// A session with no traffic for this long is dropped, so a sender that
   /// vanishes cannot keep the receiver busy (and the phone awake) forever.
   final Duration sessionIdleTimeout;
+
+  /// How long a whole-file upload may go without data before a resume of the
+  /// same file stops waiting for it (its sender is taken to have vanished).
+  final Duration stallTimeout;
   Timer? _idleTimer;
 
   static const maxPinAttempts = 5;
@@ -414,6 +460,37 @@ class ReceiveServer {
       return;
     }
 
+    // A resume is a separate request for the same file; it waits until the
+    // previous attempt is done with the part file.
+    await file.wholeGate.run(abandoned: () => DateTime.now().difference(file.lastWholeData) > stallTimeout, () async {
+      if (file.wholeRunning > 0 && !file.done) {
+        // The earlier attempt went silent and is left behind.
+        file.partPath = null;
+        file.partGeneration++;
+      }
+      file.lastWholeData = DateTime.now();
+      if (file.done) {
+        // The earlier attempt finished the file while this one waited: the
+        // sender only missed the answer. Say OK, and do not save a second copy.
+        await request.drain<void>();
+        await _empty(request, 200);
+        return;
+      }
+      file.wholeRunning++;
+      try {
+        await _uploadWhole(request, session, file, fileId);
+      } finally {
+        file.wholeRunning--;
+      }
+    });
+  }
+
+  Future<void> _uploadWhole(
+    HttpRequest request,
+    _Session session,
+    _AcceptedFile file,
+    String fileId,
+  ) async {
     final part = await _reserve(file);
     final destination = file.destination!;
 
@@ -425,6 +502,7 @@ class ReceiveServer {
     try {
       await sink.addStream(
         request.map((chunk) {
+          file.lastWholeData = DateTime.now();
           hasher.add(chunk);
           received += chunk.length;
           _touch();
@@ -594,8 +672,10 @@ class ReceiveServer {
     if (existing != null) return File(existing);
 
     final relative = sanitizeReceivedFileName(file.meta.fileName);
-    final destination = await _uniqueDestination(relative);
-    final part = File('${destination.path}.zajel-part');
+    // A resume after a stalled attempt keeps the name already chosen.
+    final destination = file.destination ?? await _uniqueDestination(relative);
+    final generation = file.partGeneration == 0 ? '' : '.${file.partGeneration}';
+    final part = File('${destination.path}$generation.zajel-part');
     await part.parent.create(recursive: true);
     final handle = await part.open(mode: FileMode.write);
     await handle.truncate(file.meta.size);
@@ -710,54 +790,58 @@ class ReceiveServer {
   Future<void> _uploadTar(HttpRequest request) async {
     final session = _authorizeTar(request);
     tarUploadRequests++;
-    await TarReader(request).read((header, content) async {
-      final file = session.files[header.name];
-      if (file == null) throw const _HttpError(400, 'Unknown file in archive');
-      if (file.done) throw const _HttpError(409, 'File already received');
-      if (header.size != file.meta.size) {
-        throw const _HttpError(400, 'Size mismatch');
-      }
-
-      final part = await _reserve(file);
-      final digestSink = _DigestCollector();
-      final hasher = sha256.startChunkedConversion(digestSink);
-      final sink = part.openWrite();
-      var received = 0;
-      try {
-        while (true) {
-          final piece = await content.read();
-          if (piece == null) break;
-          hasher.add(piece);
-          sink.add(piece);
-          received += piece.length;
-          _touch();
-          _events.add(FileProgress(session.id, header.name, received, file.meta.size));
+    // A resume re-sends the same archive; serialize whole-file uploads so it
+    // cannot open a part file while the previous attempt is still writing it.
+    await session.tarGate.run(() async {
+      await TarReader(request).read((header, content) async {
+        final file = session.files[header.name];
+        if (file == null) throw const _HttpError(400, 'Unknown file in archive');
+        if (file.done) throw const _HttpError(409, 'File already received');
+        if (header.size != file.meta.size) {
+          throw const _HttpError(400, 'Size mismatch');
         }
-        await sink.close();
-      } catch (_) {
-        await sink.close().catchError((_) {});
-        await _deleteQuietly(part);
-        rethrow;
-      }
-      hasher.close();
 
-      final expected = file.meta.sha256;
-      if (received != file.meta.size ||
-          (expected != null &&
-              expected.toLowerCase() != digestSink.digest.toString())) {
-        await _deleteQuietly(part);
-        throw _HttpError(
-          received != file.meta.size ? 400 : 422,
-          received != file.meta.size ? 'Size mismatch' : 'Checksum mismatch',
-        );
-      }
-      await part.rename(file.destination!.path);
-      file.done = true;
-      file.partPath = null;
-      _events.add(FileReceived(session.id, header.name, file.destination!.path));
+        final part = await _reserve(file);
+        final digestSink = _DigestCollector();
+        final hasher = sha256.startChunkedConversion(digestSink);
+        final sink = part.openWrite();
+        var received = 0;
+        try {
+          while (true) {
+            final piece = await content.read();
+            if (piece == null) break;
+            hasher.add(piece);
+            sink.add(piece);
+            received += piece.length;
+            _touch();
+            _events.add(FileProgress(session.id, header.name, received, file.meta.size));
+          }
+          await sink.close();
+        } catch (_) {
+          await sink.close().catchError((_) {});
+          await _deleteQuietly(part);
+          rethrow;
+        }
+        hasher.close();
+
+        final expected = file.meta.sha256;
+        if (received != file.meta.size ||
+            (expected != null &&
+                expected.toLowerCase() != digestSink.digest.toString())) {
+          await _deleteQuietly(part);
+          throw _HttpError(
+            received != file.meta.size ? 400 : 422,
+            received != file.meta.size ? 'Size mismatch' : 'Checksum mismatch',
+          );
+        }
+        await part.rename(file.destination!.path);
+        file.done = true;
+        file.partPath = null;
+        _events.add(FileReceived(session.id, header.name, file.destination!.path));
+      });
+      await _empty(request, 200);
+      _endSessionIfFinished(session);
     });
-    await _empty(request, 200);
-    _endSessionIfFinished(session);
   }
 
   /// Reads and discards the body, for the speed test. Nothing touches disk.

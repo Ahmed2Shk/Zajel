@@ -25,6 +25,7 @@ class TransferHarness {
     String? pin,
     bool enableChunking = true,
     Duration sessionIdleTimeout = const Duration(minutes: 2),
+    Duration stallTimeout = const Duration(seconds: 30),
     NativeDataBridge? nativeData,
   }) async {
     final downloads = await createTestDir('zajel_downloads_');
@@ -40,6 +41,7 @@ class TransferHarness {
       pin: pin,
       enableChunking: enableChunking,
       sessionIdleTimeout: sessionIdleTimeout,
+      stallTimeout: stallTimeout,
       nativeData: nativeData,
     );
     await server.start(port: 0, address: InternetAddress.loopbackIPv4);
