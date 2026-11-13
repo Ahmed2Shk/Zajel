@@ -37,6 +37,25 @@ hashing all share one thread. These numbers measure the cost of the Dart code, n
 | --- | --- | --- | --- | --- | --- | --- |
 | | | | | | | |
 
+## Same-LAN (router) vs QR hotspot — developer report
+
+Reported on two phones: a transfer over the shared router (radar) stayed near **2 MB/s**, while the
+same transfer over the QR hotspot (direct 5 GHz link) reached **30 MB/s**. Both use the same transfer
+engine, so the network route was the difference — but one code path made the router case much worse
+than it had to be:
+
+- Files between 1 MB and 8 MB went through `_uploadOne`: **one plain TCP stream**. A single stream is
+  limited by its TCP window divided by the round-trip time, so a router (high RTT) was far slower than
+  a direct hotspot (low RTT), where the window is never the limit.
+- **Not done yet:** splitting files of 1 MB or more into parallel pieces. Files under 8 MB still go
+  through `_uploadOne` (the threshold is `UploadOptions.chunkSize`).
+- Done: one `HttpClient` is reused for the whole batch, so the TLS connections stay open across files
+  instead of a fresh handshake per file. Not measured on phones.
+
+The same `slowLinkHint` still fires below 3 MB/s after 16 MB, telling the user to switch to QR or
+Wi-Fi Direct. Measure the router path again on two phones to record the new number here.
+
+
 ## Not measured yet
 
 - The Kotlin native data path has been compiled and its Dart side tested against a stand-in, but it has

@@ -178,8 +178,11 @@ class SendClient {
   }
 
   /// Uploads every accepted file in [files], one after another. Each file is
-  /// streamed from disk. Against a Zajel receiver, big files go as parallel
-  /// chunks; against anything else, as one plain LocalSend upload.
+  /// streamed from disk. Against a Zajel receiver, medium and big files go as
+  /// parallel chunks; against anything else, as one plain LocalSend upload.
+  ///
+  /// One [HttpClient] is reused for the whole batch, so the TLS connections
+  /// stay open across files instead of a fresh handshake per file.
   ///
   /// Calling this again on the same [session] after a failure resumes: the
   /// receiver is asked what it already has and only the rest is sent.
@@ -191,33 +194,46 @@ class SendClient {
     bool Function()? isCancelled,
     UploadOptions options = const UploadOptions(),
   }) async {
-    // Many small files go as one tar request, which saves a round trip each.
-    final bundled = <String>{};
-    final tarToken = session.tarToken;
-    if (tarToken != null) {
-      final small = [
-        for (final file in files)
-          if (session.tokens.containsKey(file.id) &&
-              file.size < options.tarMaxFileSize &&
-              utf8.encode(file.id).length <= 100)
-            file,
-      ];
-      if (small.length >= options.tarMinFiles) {
-        await _uploadTar(session, tarToken, small, onProgress, isCancelled);
-        bundled.addAll(small.map((f) => f.id));
+    final client = _newClient(session.target);
+    try {
+      // Many small files go as one tar request, which saves a round trip each.
+      final bundled = <String>{};
+      final tarToken = session.tarToken;
+      if (tarToken != null) {
+        final small = [
+          for (final file in files)
+            if (session.tokens.containsKey(file.id) &&
+                file.size < options.tarMaxFileSize &&
+                utf8.encode(file.id).length <= 100)
+              file,
+        ];
+        if (small.length >= options.tarMinFiles) {
+          await _uploadTar(session, tarToken, small, client, onProgress, isCancelled);
+          bundled.addAll(small.map((f) => f.id));
+        }
       }
-    }
 
-    for (final file in files) {
-      final token = session.tokens[file.id];
-      if (token == null) continue; // declined by the receiver
-      if (bundled.contains(file.id)) continue;
-      if (isCancelled?.call() ?? false) return;
-      if (session.chunked && file.size >= options.chunkSize) {
-        await _uploadChunked(session, file, token, options, onProgress, isCancelled);
-      } else {
-        await _uploadOne(session, file, token, onProgress, isCancelled);
+      for (final file in files) {
+        final token = session.tokens[file.id];
+        if (token == null) continue; // declined by the receiver
+        if (bundled.contains(file.id)) continue;
+        if (isCancelled?.call() ?? false) return;
+        if (session.chunked && file.size >= options.chunkSize) {
+          await _uploadChunked(
+            session,
+            file,
+            token,
+            options,
+            client,
+            onProgress,
+            isCancelled,
+          );
+        } else {
+          await _uploadOne(session, file, token, client, onProgress, isCancelled);
+        }
       }
+    } finally {
+      client.close(force: true);
     }
   }
 
@@ -228,67 +244,63 @@ class SendClient {
     SendSession session,
     String tarToken,
     List<SendFile> files,
+    HttpClient client,
     void Function(String fileId, int sent)? onProgress,
     bool Function()? isCancelled,
   ) async {
-    final client = _newClient(session.target);
-    try {
-      final query = {'sessionId': session.sessionId, 'token': tarToken};
+    final query = {'sessionId': session.sessionId, 'token': tarToken};
 
-      final statusRequest = await client.getUrl(
-        _uri(session.target, '/zajel/tar-status', query),
-      );
-      final statusResponse = await statusRequest.close();
-      final statusBody = await utf8.decodeStream(statusResponse);
-      final done = statusResponse.statusCode == 200
-          ? ((jsonDecode(statusBody) as Map<String, dynamic>)['done'] as List)
-                .cast<String>()
-                .toSet()
-          : <String>{};
-      for (final file in files.where((f) => done.contains(f.id))) {
-        onProgress?.call(file.id, file.size);
-      }
-      final remaining = [
-        for (final file in files)
-          if (!done.contains(file.id)) file,
-      ];
-      if (remaining.isEmpty) return;
+    final statusRequest = await client.getUrl(
+      _uri(session.target, '/zajel/tar-status', query),
+    );
+    final statusResponse = await statusRequest.close();
+    final statusBody = await utf8.decodeStream(statusResponse);
+    final done = statusResponse.statusCode == 200
+        ? ((jsonDecode(statusBody) as Map<String, dynamic>)['done'] as List)
+              .cast<String>()
+              .toSet()
+        : <String>{};
+    for (final file in files.where((f) => done.contains(f.id))) {
+      onProgress?.call(file.id, file.size);
+    }
+    final remaining = [
+      for (final file in files)
+        if (!done.contains(file.id)) file,
+    ];
+    if (remaining.isEmpty) return;
 
-      final entries = [
-        for (final file in remaining)
-          TarEntry(
-            name: file.id,
-            size: file.size,
-            open: () => file.file.openRead(),
-          ),
-      ];
-      final request = await client.postUrl(
-        _uri(session.target, '/zajel/tar', query),
+    final entries = [
+      for (final file in remaining)
+        TarEntry(
+          name: file.id,
+          size: file.size,
+          open: () => file.file.openRead(),
+        ),
+    ];
+    final request = await client.postUrl(
+      _uri(session.target, '/zajel/tar', query),
+    );
+    request.headers
+      ..contentType = ContentType.binary
+      ..contentLength = tarLength(entries);
+    await request.addStream(
+      tarEncode(
+        entries,
+        onBytes: (name, bytes) => onProgress?.call(name, bytes),
+      ).map((chunk) {
+        if (isCancelled?.call() ?? false) {
+          throw const SendException('Cancelled');
+        }
+        return chunk;
+      }),
+    );
+    final response = await request.close();
+    final body = await utf8.decodeStream(response);
+    if (response.statusCode != 200) {
+      throw SendException(
+        _messageOf(body) ?? 'Archive upload failed',
+        statusCode: response.statusCode,
       );
-      request.headers
-        ..contentType = ContentType.binary
-        ..contentLength = tarLength(entries);
-      await request.addStream(
-        tarEncode(
-          entries,
-          onBytes: (name, bytes) => onProgress?.call(name, bytes),
-        ).map((chunk) {
-          if (isCancelled?.call() ?? false) {
-            throw const SendException('Cancelled');
-          }
-          return chunk;
-        }),
-      );
-      final response = await request.close();
-      final body = await utf8.decodeStream(response);
-      if (response.statusCode != 200) {
-        throw SendException(
-          _messageOf(body) ?? 'Archive upload failed',
-          statusCode: response.statusCode,
-        );
-      }
-    } finally {
-      client.close(force: true);
     }
   }
 
@@ -297,11 +309,12 @@ class SendClient {
     SendFile file,
     String token,
     UploadOptions options,
+    HttpClient client,
     void Function(String fileId, int sent)? onProgress,
     bool Function()? isCancelled,
   ) async {
     // Resume: skip whatever the receiver already holds.
-    final have = await _receivedRanges(session, file, token);
+    final have = await _receivedRanges(session, file, token, client);
     if (have.isComplete(file.size)) {
       onProgress?.call(file.id, file.size);
       return;
@@ -325,65 +338,56 @@ class SendClient {
           )
         : session.target;
 
+    // The shared client pools one connection per worker, so several chunks
+    // travel at the same time and the connections survive into the next file.
     Future<void> worker() async {
-      // One client per worker keeps a TLS connection open across its chunks.
-      var onDataPort = useDataPort;
-      var client = _newClient(chunkPeer());
-      try {
-        while (pending.isNotEmpty) {
-          if (isCancelled?.call() ?? false) return;
-          final (start, end) = pending.removeFirst();
-          var attempt = 0;
-          while (true) {
-            if (onDataPort != useDataPort) {
-              client.close(force: true);
-              onDataPort = useDataPort;
-              client = _newClient(chunkPeer());
+      while (pending.isNotEmpty) {
+        if (isCancelled?.call() ?? false) return;
+        final (start, end) = pending.removeFirst();
+        var attempt = 0;
+        while (true) {
+          final onDataPort = useDataPort;
+          final peer = chunkPeer();
+          var inFlight = 0;
+          try {
+            await _sendChunk(
+              client,
+              peer,
+              session,
+              file,
+              token,
+              start,
+              end,
+              (n) {
+                // From the first byte on, the data port is in use: another
+                // worker's failed connection must not switch everyone to the
+                // main port, which would truncate the file under this chunk.
+                if (onDataPort) dataPortWorked = true;
+                inFlight += n;
+                sent += n;
+                onProgress?.call(file.id, sent);
+              },
+              isCancelled,
+            );
+            if (onDataPort) dataPortWorked = true;
+            break;
+          } catch (e) {
+            sent -= inFlight; // this chunk starts over
+            if (isCancelled?.call() ?? false) rethrow;
+            if (onDataPort &&
+                !dataPortWorked &&
+                (e is SocketException || e is TlsException)) {
+              useDataPort = false;
+              continue; // switching routes is not a retry
             }
-            var inFlight = 0;
-            try {
-              await _sendChunk(
-                client,
-                chunkPeer(),
-                session,
-                file,
-                token,
-                start,
-                end,
-                (n) {
-                  // From the first byte on, the data port is in use: another
-                  // worker's failed connection must not switch everyone to the
-                  // main port, which would truncate the file under this chunk.
-                  if (onDataPort) dataPortWorked = true;
-                  inFlight += n;
-                  sent += n;
-                  onProgress?.call(file.id, sent);
-                },
-                isCancelled,
-              );
-              if (onDataPort) dataPortWorked = true;
-              break;
-            } catch (e) {
-              sent -= inFlight; // this chunk starts over
-              if (isCancelled?.call() ?? false) rethrow;
-              if (onDataPort &&
-                  !dataPortWorked &&
-                  (e is SocketException || e is TlsException)) {
-                useDataPort = false;
-                continue; // switching routes is not a retry
-              }
-              if (attempt++ >= options.retries || !isTransientError(e)) {
-                rethrow;
-              }
-              await Future<void>.delayed(Duration(milliseconds: 200 * attempt));
+            if (attempt++ >= options.retries || !isTransientError(e)) {
+              rethrow;
             }
+            await Future<void>.delayed(Duration(milliseconds: 200 * attempt));
           }
         }
-      } finally {
-        client.close(force: true);
       }
     }
-
 
     final workers = [
       for (var i = 0; i < options.parallel && i < pending.length; i++) worker(),
@@ -451,24 +455,20 @@ class SendClient {
     SendSession session,
     SendFile file,
     String token,
+    HttpClient client,
   ) async {
-    final client = _newClient(session.target);
-    try {
-      final request = await client.getUrl(
-        _uri(session.target, '/zajel/progress', {
-          'sessionId': session.sessionId,
-          'fileId': file.id,
-          'token': token,
-        }),
-      );
-      final response = await request.close();
-      final body = await utf8.decodeStream(response);
-      if (response.statusCode != 200) return RangeSet();
-      final json = jsonDecode(body) as Map<String, dynamic>;
-      return RangeSet.fromJson(json['ranges'] as List<dynamic>);
-    } finally {
-      client.close(force: true);
-    }
+    final request = await client.getUrl(
+      _uri(session.target, '/zajel/progress', {
+        'sessionId': session.sessionId,
+        'fileId': file.id,
+        'token': token,
+      }),
+    );
+    final response = await request.close();
+    final body = await utf8.decodeStream(response);
+    if (response.statusCode != 200) return RangeSet();
+    final json = jsonDecode(body) as Map<String, dynamic>;
+    return RangeSet.fromJson(json['ranges'] as List<dynamic>);
   }
 
   /// Sends [bytes] of zeros to the peer's speed-test endpoint and times it.
@@ -534,38 +534,34 @@ class SendClient {
     SendSession session,
     SendFile file,
     String token,
+    HttpClient client,
     void Function(String fileId, int sent)? onProgress,
     bool Function()? isCancelled,
   ) async {
-    final client = _newClient(session.target);
-    try {
-      final uri = _uri(session.target, '/upload', {
-        'sessionId': session.sessionId,
-        'fileId': file.id,
-        'token': token,
-      });
-      final request = await client.postUrl(uri);
-      request.headers
-        ..contentType = ContentType.binary
-        ..contentLength = file.size;
-      var sent = 0;
-      await request.addStream(
-        file.file.openRead().map((chunk) {
-          if (isCancelled?.call() ?? false) {
-            throw const SendException('Cancelled');
-          }
-          sent += chunk.length;
-          onProgress?.call(file.id, sent);
-          return chunk;
-        }),
-      );
-      final response = await request.close();
-      await response.drain<void>();
-      if (response.statusCode != 200) {
-        throw SendException('Upload failed', statusCode: response.statusCode);
-      }
-    } finally {
-      client.close(force: true);
+    final uri = _uri(session.target, '/upload', {
+      'sessionId': session.sessionId,
+      'fileId': file.id,
+      'token': token,
+    });
+    final request = await client.postUrl(uri);
+    request.headers
+      ..contentType = ContentType.binary
+      ..contentLength = file.size;
+    var sent = 0;
+    await request.addStream(
+      file.file.openRead().map((chunk) {
+        if (isCancelled?.call() ?? false) {
+          throw const SendException('Cancelled');
+        }
+        sent += chunk.length;
+        onProgress?.call(file.id, sent);
+        return chunk;
+      }),
+    );
+    final response = await request.close();
+    await response.drain<void>();
+    if (response.statusCode != 200) {
+      throw SendException('Upload failed', statusCode: response.statusCode);
     }
   }
 
