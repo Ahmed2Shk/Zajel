@@ -385,7 +385,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get slowLinkHint =>
-      'السرعة منخفضة. غالباً الراوتر يحدّ سرعة كل جهاز أو يمرّر النقل عبره. جرّب رمز QR أو Wi-Fi Direct للاتصال المباشر بين الجهازين.';
+      'السرعة منخفضة لأن الراوتر يحدّ النقل بين الأجهزة. اطلب من الطرف الآخر أن يضغط «استقبال» ثم أرسل من جديد: ينتقل النقل تلقائياً إلى اتصال مباشر سريع.';
 
   @override
   String get deviceGone => 'هذا الجهاز لم يعد متاحاً. ابحث من جديد.';
@@ -438,7 +438,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get qrShowLanNote =>
-      'الأجهزة على نفس الواي فاي تستطيع الإرسال إلى هذا الجهاز بدون مسح الرمز.';
+      'جهاز على نفس الواي فاي؟ يكفي أن يضغط المرسل على اسم هذا الجهاز، وسينتقل تلقائياً إلى الاتصال المباشر السريع بدون مسح الرمز.';
 
   @override
   String get qrShowIntro =>

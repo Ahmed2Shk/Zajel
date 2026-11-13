@@ -234,6 +234,10 @@ class ReceiveServer {
   static const finishedLinger = Duration(seconds: 60);
   ({String token, String pin})? _pairing;
 
+  /// The pairing code of the hotspot this device hosts right now, or null. Set
+  /// while the QR screen is open. See [zajelDirectRoute].
+  String? directCode;
+
   Stream<ReceiveEvent> get events => _events.stream;
 
   /// How many plain uploads and tar uploads were served. For tests and the
@@ -300,6 +304,8 @@ class ReceiveServer {
           await _progress(request);
         case ('POST', zajelBenchmarkRoute) when enableChunking:
           await _benchmark(request);
+        case ('GET', zajelDirectRoute) when enableChunking:
+          await _direct(request);
         case ('POST', zajelTarRoute) when enableChunking:
           await _uploadTar(request);
         case ('GET', zajelTarStatusRoute) when enableChunking:
@@ -880,6 +886,19 @@ class ReceiveServer {
       await _empty(request, 200);
       _endSessionIfFinished(session);
     });
+  }
+
+  /// Hands the hotspot's pairing code to a sender that reached this device over
+  /// the shared Wi-Fi. It is the code the QR shows, so this gives away nothing
+  /// the open QR screen does not; the transfer itself still needs the owner's
+  /// Accept. Not offered when a permanent PIN is set: that PIN must be typed.
+  Future<void> _direct(HttpRequest request) async {
+    final code = directCode;
+    if (code == null || pin != null) {
+      await _empty(request, 404);
+      return;
+    }
+    await _json(request, 200, {'code': code});
   }
 
   /// Reads and discards the body, for the speed test. Nothing touches disk.

@@ -523,6 +523,32 @@ class SendClient {
     return RangeSet.fromJson(json['ranges'] as List<dynamic>);
   }
 
+  /// Asks a Zajel receiver on the shared Wi-Fi for the pairing code of the
+  /// hotspot it is hosting. Null when it hosts none, is not Zajel, or does not
+  /// answer in time: the caller then simply stays on the Wi-Fi.
+  Future<String?> requestDirectCode({
+    required InternetAddress address,
+    required int port,
+    required String expectedFingerprint,
+    Duration timeout = const Duration(seconds: 6),
+  }) async {
+    final peer = SendPeer(address, port, expectedFingerprint);
+    final client = _newClient(peer)..connectionTimeout = timeout;
+    try {
+      final request = await client.getUrl(_uri(peer, '/zajel/direct', const {})).timeout(timeout);
+      final response = await request.close().timeout(timeout);
+      final body = await utf8.decodeStream(response).timeout(timeout);
+      if (response.statusCode != 200) return null;
+      final decoded = jsonDecode(body);
+      final code = decoded is Map ? decoded['code'] : null;
+      return code is String ? code : null;
+    } catch (_) {
+      return null;
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   /// Sends [bytes] of zeros to the peer's speed-test endpoint and times it.
   /// Nothing is written to disk on either side. Needs a Zajel peer.
   Future<BenchmarkResult> benchmark({

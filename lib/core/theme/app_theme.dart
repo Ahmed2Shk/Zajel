@@ -120,6 +120,11 @@ abstract final class AppTheme {
         ),
       ),
       listTileTheme: ListTileThemeData(shape: shape),
+      // The default track is a bright container color: an empty bar looked full.
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        linearTrackColor: scheme.onSurface.withValues(alpha: 0.12),
+        stopIndicatorColor: scheme.onSurface.withValues(alpha: 0),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,

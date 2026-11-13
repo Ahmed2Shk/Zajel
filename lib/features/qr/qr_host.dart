@@ -66,18 +66,19 @@ class QrHostNotifier extends Notifier<QrHostState> {
       final token = base64Url.encode(List.generate(18, (_) => _random.nextInt(256))).replaceAll('=', '');
       final pin = (1000 + _random.nextInt(9000)).toString();
       service.armPairing(token: token, pin: pin);
-      state = QrHostReady(
-        PairingPayload(
-          ssid: hotspot.credentials.ssid,
-          passphrase: hotspot.credentials.passphrase,
-          ip: hotspot.address.address,
-          port: service.device.port,
-          fingerprint: service.device.fingerprint,
-          token: token,
-          pin: pin,
-          alias: service.device.alias,
-        ),
+      final payload = PairingPayload(
+        ssid: hotspot.credentials.ssid,
+        passphrase: hotspot.credentials.passphrase,
+        ip: hotspot.address.address,
+        port: service.device.port,
+        fingerprint: service.device.fingerprint,
+        token: token,
+        pin: pin,
+        alias: service.device.alias,
       );
+      // A sender on the same Wi-Fi gets the code by asking, without scanning.
+      service.directOffer = payload.encode();
+      state = QrHostReady(payload);
     } on TransportException catch (e) {
       state = QrHostFailed(e.reason);
     }
@@ -86,6 +87,7 @@ class QrHostNotifier extends Notifier<QrHostState> {
   Future<void> _undo() async {
     _started = false;
     _service?.disarmPairing();
+    _service?.directOffer = null;
     try {
       await _manager?.stopHotspot();
     } catch (_) {}

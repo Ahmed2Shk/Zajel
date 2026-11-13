@@ -62,7 +62,14 @@ class MulticastDiscovery {
     }
   }
 
-  void announce() => _send(MulticastMessage(device: self, announce: true));
+  /// Tells the network this device is here. Also joins the multicast group on
+  /// any network that has appeared since (Wi-Fi connected later, a hotspot
+  /// started), so discovery works without restarting the app.
+  void announce() {
+    final socket = _socket;
+    if (socket != null) unawaited(_joinGroup(socket));
+    _send(MulticastMessage(device: self, announce: true));
+  }
 
   Future<void> stop() async {
     for (final timer in _timers) {
@@ -73,28 +80,40 @@ class MulticastDiscovery {
     _socket = null;
   }
 
+  /// Joins the group on every network there is. Never throws: with no network
+  /// at all (Wi-Fi off, not connected) there is nothing to join, and the app
+  /// must still start, because a QR hotspot needs no network to begin with.
   Future<void> _joinGroup(RawDatagramSocket socket) async {
     final group = InternetAddress(groupAddress);
     var joined = false;
-    for (final interface in await NetworkInterface.list(
-      type: InternetAddressType.IPv4,
-    )) {
-      try {
-        socket.joinMulticast(group, interface);
-        joined = true;
-      } on SocketException {
-        // Interface does not support multicast (loopback, VPN...).
+    try {
+      for (final interface in await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+      )) {
+        try {
+          socket.joinMulticast(group, interface);
+          joined = true;
+        } catch (_) {
+          // Already joined, or the interface has no multicast (loopback, VPN).
+        }
       }
+      if (!joined) socket.joinMulticast(group);
+    } catch (_) {
+      // No usable network right now; announce() tries again later.
     }
-    if (!joined) socket.joinMulticast(group);
   }
 
   void _send(MulticastMessage message) {
-    _socket?.send(
-      utf8.encode(jsonEncode(message.toJson())),
-      InternetAddress(groupAddress),
-      port,
-    );
+    try {
+      _socket?.send(
+        utf8.encode(jsonEncode(message.toJson())),
+        InternetAddress(groupAddress),
+        port,
+      );
+    } catch (_) {
+      // "Network is unreachable": no Wi-Fi at the moment, or this app's
+      // traffic is bound to a hotspot. Nothing to announce to.
+    }
   }
 
   void _onDatagram(Datagram datagram) {

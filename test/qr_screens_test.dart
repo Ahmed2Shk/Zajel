@@ -141,11 +141,15 @@ void main() {
       expect(service.isPairingArmed, isTrue);
       expect(backend.calls, contains('startHotspot'));
 
-      // Leaving the screen takes the hotspot and the pairing away.
+      // A sender on the same Wi-Fi can ask for the same code.
+      expect(PairingPayload.parse(service.directOffer!).token, payload.token);
+
+      // Leaving the screen takes the hotspot, the pairing and the offer away.
       await _go(tester, container, AppRoutes.home);
       await tester.pump(const Duration(milliseconds: 100));
       expect(service.isPairingArmed, isFalse);
       expect(backend.calls, contains('stopHotspot'));
+      expect(service.directOffer, isNull);
     });
 
     testWidgets('accepting a transfer opens the receiving screen without closing the hotspot', (tester) async {

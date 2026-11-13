@@ -132,6 +132,30 @@ class QrRoute extends PeerRoute {
   String get alias => payload.alias;
 }
 
+/// For a device found on the shared Wi-Fi: asks it for its hotspot ([askCode])
+/// and, if it hosts one, puts that direct route first, keeping the Wi-Fi as the
+/// fallback. This is the QR pairing without the scanning: a router that
+/// throttles traffic between its clients is bypassed with one tap.
+///
+/// The code comes from the network, so it is checked like a scanned one, and
+/// it must carry the fingerprint of the device that was tapped.
+Future<List<PeerRoute>> withDirectUpgrade(
+  List<PeerRoute> routes,
+  Future<String?> Function(DiscoveredDevice device) askCode,
+) async {
+  if (routes.isEmpty || routes.any((r) => r is! LanRoute)) return routes;
+  final device = (routes.first as LanRoute).device;
+  final code = await askCode(device);
+  if (code == null) return routes;
+  try {
+    final payload = PairingPayload.parse(code);
+    if (payload.fingerprint != device.info.fingerprint.toLowerCase()) return routes;
+    return [QrRoute(payload), ...routes];
+  } on PairingFormatException {
+    return routes;
+  }
+}
+
 /// Where to send, once a route has been set up. [pairToken] and [pin] are only
 /// set for QR pairing.
 class PeerEndpoint {

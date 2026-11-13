@@ -25,6 +25,10 @@ const zajelTarStatusRoute = '$localSendApiPrefix/zajel/tar-status';
 const zajelProgressRoute = '$localSendApiPrefix/zajel/progress';
 const zajelBenchmarkRoute = '$localSendApiPrefix/zajel/benchmark';
 
+/// Answers with the receiver's pairing code while it hosts a QR hotspot, so a
+/// sender on the same (slow) Wi-Fi can move to the hotspot without scanning.
+const zajelDirectRoute = '$localSendApiPrefix/zajel/direct';
+
 enum DeviceType {
   mobile,
   desktop,

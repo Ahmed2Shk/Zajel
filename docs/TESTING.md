@@ -62,6 +62,17 @@ Turn off Wi-Fi networks and mobile data on both phones.
 - [ ] Turn Wi-Fi off on the sender right at the end of a transfer, then on again: the sender must end with "done", not "declined"
 - [ ] Cancel on the receiver in the middle of a file: that file must not appear in the Gallery or Downloads
 
+## Automatic hotspot (check each by hand)
+
+Both phones on the same Wi-Fi.
+
+- [ ] B taps Receive (QR screen). A picks a file and taps B on the radar: Android asks A to connect to "AndroidShare_...", A accepts, the transfer runs at the QR speed (around 30 MB/s), not the router speed
+- [ ] A's exported log has `transport the receiver offers its hotspot: switching to it` and `wifi join: connected to AndroidShare_...`
+- [ ] A declines Android's connect dialog: the transfer still starts over the Wi-Fi (slow), with no PIN prompt
+- [ ] B is NOT on the Receive screen: tapping B sends over the Wi-Fi as before
+- [ ] Wi-Fi off on both phones, open the app: it starts normally, Receive shows a QR code, scanning it transfers (before, the app did nothing without a network)
+- [ ] The progress bar is empty at 0% and fills as the transfer goes (before, it looked full and blue)
+
 ## Phase 4 — Desktop and browser
 
 - [ ] Windows ↔ Android both ways

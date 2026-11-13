@@ -292,6 +292,27 @@ class SendJobNotifier extends Notifier<SendJob> {
       files: files,
     );
 
+    // A receiver that is waiting with its hotspot up hands over the way in:
+    // the transfer then runs phone to phone instead of through the router.
+    PairingPayload? offered;
+    final service = ref.read(localSendServiceProvider).value;
+    if (manager != null && service != null) {
+      routes = await withDirectUpgrade(
+        routes,
+        (device) => service.client.requestDirectCode(
+          address: device.address,
+          port: device.info.port,
+          expectedFingerprint: device.info.fingerprint,
+        ),
+      );
+      offered = routes.first is QrRoute && routes.length > 1 ? (routes.first as QrRoute).payload : null;
+      if (offered != null) {
+        ref.read(appLogProvider)?.info('transport', 'the receiver offers its hotspot: switching to it');
+      }
+      _lastRoutes = routes;
+      if (_cancelled) return;
+    }
+
     final PeerEndpoint endpoint;
     try {
       // Without a manager (not Android) only the shared Wi-Fi is possible.
@@ -311,6 +332,9 @@ class SendJobNotifier extends Notifier<SendJob> {
       await manager?.release(endpoint);
       return;
     }
+    if (offered != null && endpoint.via == TransportKind.sameLan) {
+      ref.read(appLogProvider)?.warn('transport', 'could not join the hotspot: staying on the Wi-Fi');
+    }
 
     await send(
       DiscoveredDevice(
@@ -322,7 +346,9 @@ class SendJobNotifier extends Notifier<SendJob> {
         endpoint.address,
       ),
       pin: endpoint.pin,
-      pairToken: endpoint.pairToken,
+      // The receiver is in pairing mode: over the Wi-Fi it wants the same
+      // token as over its hotspot.
+      pairToken: endpoint.pairToken ?? offered?.token,
       endpoint: endpoint,
     );
   }

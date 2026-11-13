@@ -386,7 +386,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get slowLinkHint =>
-      'The speed is low. Often the router limits each device or relays the transfer. Try a QR code or Wi-Fi Direct for a direct link between the two devices.';
+      'The speed is low because the router limits traffic between devices. Ask the other person to tap \"Receive\", then send again: the transfer moves to a fast direct link by itself.';
 
   @override
   String get deviceGone => 'That device is no longer available. Search again.';
@@ -440,7 +440,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qrShowLanNote =>
-      'Devices on the same Wi-Fi can also send to this device without scanning.';
+      'On the same Wi-Fi? The sender just taps this device and switches to the fast direct link by itself, with no scanning.';
 
   @override
   String get qrShowIntro =>

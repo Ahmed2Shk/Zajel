@@ -785,7 +785,7 @@ abstract class AppLocalizations {
   /// No description provided for @slowLinkHint.
   ///
   /// In ar, this message translates to:
-  /// **'السرعة منخفضة. غالباً الراوتر يحدّ سرعة كل جهاز أو يمرّر النقل عبره. جرّب رمز QR أو Wi-Fi Direct للاتصال المباشر بين الجهازين.'**
+  /// **'السرعة منخفضة لأن الراوتر يحدّ النقل بين الأجهزة. اطلب من الطرف الآخر أن يضغط «استقبال» ثم أرسل من جديد: ينتقل النقل تلقائياً إلى اتصال مباشر سريع.'**
   String get slowLinkHint;
 
   /// No description provided for @deviceGone.
@@ -881,7 +881,7 @@ abstract class AppLocalizations {
   /// No description provided for @qrShowLanNote.
   ///
   /// In ar, this message translates to:
-  /// **'الأجهزة على نفس الواي فاي تستطيع الإرسال إلى هذا الجهاز بدون مسح الرمز.'**
+  /// **'جهاز على نفس الواي فاي؟ يكفي أن يضغط المرسل على اسم هذا الجهاز، وسينتقل تلقائياً إلى الاتصال المباشر السريع بدون مسح الرمز.'**
   String get qrShowLanNote;
 
   /// No description provided for @qrShowIntro.

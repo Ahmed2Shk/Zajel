@@ -33,9 +33,24 @@ hashing all share one thread. These numbers measure the cost of the Dart code, n
 
 ## Phones (fill in during Phase 2 testing)
 
+Read from the receivers' exported logs (time between the first and the last committed chunk), so these
+are real transfers, not the speed test. Phones: one Android 12 and one Android 13 (Xiaomi builds
+`SKQ1.211019.001` and `TKQ1.221114.001`).
+
 | Date | Phones | Band | Path | File | MB/s | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | |
+| 2026-11-05 | A12 -> A13 | hotspot | QR hotspot, native data path | 494 MB video | ~28 | 518 MB in 18 s |
+| 2026-11-05 | A12 -> A13 | hotspot | QR hotspot, native data path | 575 MB video | ~31 | 603 MB in 19.6 s |
+| 2026-11-13 | A12 -> A13 | hotspot | QR hotspot, native data path | 1.2 GB video | ~32 | first 168 MB in 5.2 s, then cancelled |
+| 2026-11-11 | A13 -> A12 | hotspot, band unknown | QR hotspot hosted by the A12 phone | 1.1 GB video | ~7 | 151 MB in 20 s, then cancelled |
+| 2026-11-13 | A12 -> A13 | 5 GHz, link 585 / 195 Mbps | shared router | 1.3 GB video | 0.2-0.3 | on screen; no chunk landed in 27 s |
+
+The Phase 2 target (20-40 MB/s) is met on the direct link when the Android 13 phone hosts the hotspot.
+With the Android 12 phone hosting it was about 7 MB/s; the likely reason is that its hotspot runs on
+2.4 GHz (an app cannot choose the band of a LocalOnlyHotspot), but that was not confirmed. Over the shared router the same code gives
+0.2-0.3 MB/s while the radio link itself reports hundreds of Mbps: that network limits traffic between
+its clients, and no transfer code can change it. The answer is to leave the router: see "Hotspot offer"
+in `docs/ZAJEL_EXTENSIONS.md`.
 
 ## Same-LAN (router) vs QR hotspot — developer report
 

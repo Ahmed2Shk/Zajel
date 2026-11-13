@@ -163,7 +163,13 @@ class LocalSendService {
     });
     _discoverySub = _discovery.devices.listen(_remember);
     _livenessTimer = Timer.periodic(const Duration(seconds: 8), (_) => _checkDevices());
-    await _discovery.start();
+    try {
+      await _discovery.start();
+    } catch (e, stack) {
+      // Finding devices on the Wi-Fi is one way in, not the only one: sending
+      // and receiving over a QR hotspot must work even if this fails.
+      _log?.error('discovery', e, stack);
+    }
   }
 
   /// Moves a received file to a public folder (Android) so the gallery and file
@@ -279,6 +285,13 @@ class LocalSendService {
   }
 
   bool get isWebSharing => _webShare != null;
+
+  /// While a QR hotspot is up: the same code the QR shows, handed to a Zajel
+  /// sender on the shared Wi-Fi that asks for it, so it can switch to the
+  /// hotspot by itself instead of scanning. Null takes the offer away.
+  set directOffer(String? code) => _server.directCode = code;
+
+  String? get directOffer => _server.directCode;
 
   /// Arms the one-time QR pairing: the next sender must show the QR token or
   /// type the PIN. Used while a hotspot is up for a QR code.

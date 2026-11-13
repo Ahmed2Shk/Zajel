@@ -57,6 +57,22 @@ opening the file for Dart would truncate it.
 Plain (non-chunked) uploads, which is everything a stock LocalSend sender does, still go through Dart.
 So interop with the official apps does not get the native speed-up.
 
+## Hotspot offer (automatic direct link)
+
+`GET /api/localsend/v2/zajel/direct` returns `{"code": "zajel://pair?d=..."}`: the pairing code of the
+hotspot the receiver is hosting, the same one its QR screen shows. `404` when it hosts none, and always
+`404` when a permanent PIN is set (that PIN has to be typed, never bypassed).
+
+A sender that taps a device found on the shared Wi-Fi asks this first. With a code, it joins the hotspot
+and sends over it, keeping the Wi-Fi as the fallback (and presenting the pairing token there too). So when
+the receiver is on its "Receive" screen, one tap on the sender moves the transfer off a slow router, with
+no scanning. The code is validated like a scanned one (private IPv4 only) and must carry the fingerprint
+of the device that was tapped.
+
+What this gives away: the hotspot password and the one-time pairing token, to any device on the same
+network that asks while the QR screen is open. That is what the open QR screen itself shows. It does not
+skip the owner's Accept dialog.
+
 ## Speed test
 
 `POST /api/localsend/v2/zajel/benchmark` reads and discards the body and answers `{"bytes", "ms"}`.
