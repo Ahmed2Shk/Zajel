@@ -930,6 +930,27 @@ class TransportApi {
     return pigeonVar_replyValue! as bool;
   }
 
+  /// What the Wi-Fi code did since the last call, one line per step, for the
+  /// exported log. Contains no passwords.
+  Future<List<String>> takeTransportLog() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.zajel.TransportApi.takeTransportLog$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return (pigeonVar_replyValue! as List<Object?>).cast<String>();
+  }
+
   /// Starts a LocalOnlyHotspot and returns its name and password. The system
   /// chooses the band; an app cannot pick 5 GHz for this kind of hotspot.
   Future<NativeNetworkInfo> startHotspot() async {

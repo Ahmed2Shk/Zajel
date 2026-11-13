@@ -225,6 +225,13 @@ class ReceiveServer {
   final _pinFailures = <String, List<DateTime>>{};
   HttpServer? _server;
   _Session? _session;
+
+  /// The session that finished last, kept for [finishedLinger]. A sender that
+  /// missed the answer to its final request asks again; it must hear "done",
+  /// not a refusal that its screen would show as "declined".
+  _Session? _finished;
+  DateTime? _finishedAt;
+  static const finishedLinger = Duration(seconds: 60);
   ({String token, String pin})? _pairing;
 
   Stream<ReceiveEvent> get events => _events.stream;
@@ -438,21 +445,42 @@ class ReceiveServer {
     if (sessionId == null || fileId == null || token == null) {
       throw const _HttpError(400, 'Missing parameters');
     }
-    final session = _session;
+    final session = _sessionFor(sessionId);
     final file = session?.files[fileId];
     if (session == null ||
-        session.id != sessionId ||
         file == null ||
-        file.token != token ||
+        !_constantTimeEquals(file.token, token) ||
         request.connectionInfo!.remoteAddress != session.transfer.senderAddress) {
       throw const _HttpError(403, 'Invalid token or IP address');
     }
     return (session, file, fileId);
   }
 
+  /// The active session with this id, or the one that just finished.
+  _Session? _sessionFor(String? sessionId) {
+    final active = _session;
+    if (active != null && active.id == sessionId) return active;
+    final finished = _finished;
+    final at = _finishedAt;
+    if (finished != null &&
+        at != null &&
+        finished.id == sessionId &&
+        DateTime.now().difference(at) < finishedLinger) {
+      return finished;
+    }
+    return null;
+  }
+
+  /// Answers a repeated upload of a file that is already complete: the body is
+  /// read and dropped, and the sender is told it worked.
+  Future<void> _alreadyReceived(HttpRequest request) async {
+    await request.drain<void>();
+    await _empty(request, 200);
+  }
+
   Future<void> _upload(HttpRequest request) async {
     final (session, file, fileId) = _authorize(request);
-    if (file.done) throw const _HttpError(403, 'Invalid token or IP address');
+    if (file.done) return _alreadyReceived(request);
     plainUploadRequests++;
 
     if (enableChunking && request.uri.queryParameters.containsKey('offset')) {
@@ -472,9 +500,7 @@ class ReceiveServer {
       if (file.done) {
         // The earlier attempt finished the file while this one waited: the
         // sender only missed the answer. Say OK, and do not save a second copy.
-        await request.drain<void>();
-        await _empty(request, 200);
-        return;
+        return _alreadyReceived(request);
       }
       file.wholeRunning++;
       try {
@@ -518,6 +544,11 @@ class ReceiveServer {
     }
     hasher.close();
 
+    if (!identical(_session, session)) {
+      // The transfer was cancelled while this file was arriving: do not save it.
+      await _deleteQuietly(part);
+      throw const _HttpError(403, 'Session ended');
+    }
     if (received != file.meta.size) {
       await _deleteQuietly(part);
       throw const _HttpError(400, 'Size mismatch');
@@ -729,6 +760,8 @@ class ReceiveServer {
 
   void _endSessionIfFinished(_Session session) {
     if (identical(_session, session) && session.finished) {
+      _finished = session;
+      _finishedAt = DateTime.now();
       _session = null;
       _unregisterNative(session.id);
       _idleTimer?.cancel();
@@ -757,9 +790,9 @@ class ReceiveServer {
     });
   }
 
-  _Session _authorizeTar(HttpRequest request) {
+  _Session _authorizeTar(HttpRequest request, {bool allowFinished = false}) {
     final query = request.uri.queryParameters;
-    final session = _session;
+    final session = allowFinished ? _sessionFor(query['sessionId']) : _session;
     final token = query['token'];
     if (session == null ||
         query['sessionId'] != session.id ||
@@ -774,7 +807,7 @@ class ReceiveServer {
   /// Which files of the session are already complete, so a sender that lost
   /// its connection mid-archive sends only the rest.
   Future<void> _tarStatus(HttpRequest request) async {
-    final session = _authorizeTar(request);
+    final session = _authorizeTar(request, allowFinished: true);
     await _json(request, 200, {
       'done': [
         for (final e in session.files.entries)
@@ -824,6 +857,11 @@ class ReceiveServer {
         }
         hasher.close();
 
+        if (!identical(_session, session)) {
+          // Cancelled while the archive was arriving: do not save the file.
+          await _deleteQuietly(part);
+          throw const _HttpError(403, 'Session ended');
+        }
         final expected = file.meta.sha256;
         if (received != file.meta.size ||
             (expected != null &&

@@ -878,6 +878,12 @@ abstract class AppLocalizations {
   /// **'مراجعة المحدد'**
   String get reviewSelection;
 
+  /// No description provided for @qrShowLanNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأجهزة على نفس الواي فاي تستطيع الإرسال إلى هذا الجهاز بدون مسح الرمز.'**
+  String get qrShowLanNote;
+
   /// No description provided for @qrShowIntro.
   ///
   /// In ar, this message translates to:

@@ -359,7 +359,10 @@ void main() {
       client.close();
       expect(leftovers(), hasLength(1));
 
-      await Future<void>.delayed(const Duration(milliseconds: 700));
+      // Wait for the receiver to give up, however busy the machine is.
+      for (var i = 0; i < 100 && !events.any((e) => e is SessionEnded); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
 
       expect(leftovers(), isEmpty);
       expect(events.last, isA<SessionEnded>());

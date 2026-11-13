@@ -154,6 +154,28 @@ void main() {
     });
   });
 
+  group('log', () {
+    test('the phone notes of a search reach the log, also when it fails', () async {
+      final lines = <String>[];
+      final logged = TransportManager(backend, onNote: lines.add);
+
+      backend.notes.add('search: finished, 0 Zajel receiver(s), 3 Wi-Fi Direct device(s) in range');
+      await logged.findDirectPeers();
+      expect(lines, ['search: finished, 0 Zajel receiver(s), 3 Wi-Fi Direct device(s) in range']);
+
+      backend
+        ..notes.add('join: AndroidShare_1 was not found or not approved')
+        ..joinError = _fail(TransportKind.hotspotQr, TransportFailure.timeout);
+      await expectLater(logged.establish([QrRoute(_payload())]), throwsA(isA<AllTransportsFailed>()));
+      expect(lines.last, 'join: AndroidShare_1 was not found or not approved');
+    });
+
+    test('a platform without notes does not break a transfer', () async {
+      final endpoint = await TransportManager(NoTransportBackend(), onNote: (_) {}).establish([LanRoute(_lan())]);
+      expect(endpoint.via, TransportKind.sameLan);
+    });
+  });
+
   group('QR pairing', () {
     test('carries the token and PIN to the sender', () async {
       final endpoint = await manager.establish([QrRoute(_payload())]);

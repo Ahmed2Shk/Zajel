@@ -241,14 +241,23 @@ void main() {
       expect(await rawUpload('?sessionId=${session.sessionId}&fileId=zzz&token=nope'), 403);
     });
 
-    test('a token cannot be used twice', () async {
+    test('a token cannot write a file twice', () async {
       await begin();
       final file = await sourceFile('a.bin', 3);
       final other = await sourceFile('b.bin', 3);
       final session = await harness.prepare([file, other]);
       final query = '?sessionId=${session.sessionId}&fileId=a.bin&token=${session.tokens['a.bin']}';
       expect(await rawUpload(query), 200);
-      expect(await rawUpload(query), 403);
+
+      // A repeat (a sender that missed the first answer) is told it worked,
+      // but its bytes are dropped: the saved file keeps the first content and
+      // there is no second copy.
+      expect(await rawUpload(query, body: const [9, 9, 9]), 200);
+      expect(await File('${harness.downloads.path}/a.bin').readAsBytes(), [1, 2, 3]);
+      expect(
+        harness.downloads.listSync().whereType<File>().where((f) => !f.path.endsWith('.zajel-part')),
+        hasLength(1),
+      );
     });
 
     test('checksum mismatch is a 422 and nothing is kept', () async {

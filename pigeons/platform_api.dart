@@ -152,6 +152,10 @@ abstract class TransportApi {
 
   bool supports5GHz();
 
+  /// What the Wi-Fi code did since the last call, one line per step, for the
+  /// exported log. Contains no passwords.
+  List<String> takeTransportLog();
+
   /// Starts a LocalOnlyHotspot and returns its name and password. The system
   /// chooses the band; an app cannot pick 5 GHz for this kind of hotspot.
   @async

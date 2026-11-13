@@ -45,6 +45,26 @@ class WifiTransport(
     private val main = Handler(Looper.getMainLooper())
     private val random = SecureRandom()
 
+    /**
+     * What the Wi-Fi code did, step by step, for the exported log of the app (so
+     * a problem can be diagnosed without a computer). Never holds a password.
+     */
+    private val trace = ArrayDeque<String>()
+
+    private fun note(message: String) {
+        Log.d(TAG, message)
+        synchronized(trace) {
+            if (trace.size >= MAX_TRACE) trace.removeFirst()
+            trace.addLast(message)
+        }
+    }
+
+    override fun takeTransportLog(): List<String> = synchronized(trace) {
+        val lines = trace.toList()
+        trace.clear()
+        lines
+    }
+
     private val wifi get() = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
     private val connectivity get() = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
@@ -104,8 +124,10 @@ class WifiTransport(
                         if (info == null) {
                             reservation.close()
                             hotspot = null
+                            note("hotspot: started without credentials")
                             callback(fail("failed", "Hotspot started without credentials"))
                         } else {
+                            note("hotspot: started, network ${info.ssid}")
                             callback(Result.success(info))
                         }
                     }
@@ -120,6 +142,7 @@ class WifiTransport(
                             ERROR_TETHERING_DISALLOWED -> "unsupported"
                             else -> "failed"
                         }
+                        note("hotspot: failed, reason $reason ($code)")
                         callback(fail(code, "Hotspot failed ($reason)"))
                     }
                 },
@@ -182,10 +205,14 @@ class WifiTransport(
                 override fun onAvailable(network: Network) {
                     // Send this app's traffic over the new network.
                     connectivity.bindProcessToNetwork(network)
+                    note("join: connected to $ssid")
                     answer(Result.success(Unit))
                 }
 
-                override fun onUnavailable() = answer(fail("timeout", "The network was not found or not approved"))
+                override fun onUnavailable() {
+                    note("join: $ssid was not found or not approved")
+                    answer(fail("timeout", "The network was not found or not approved"))
+                }
 
                 override fun onLost(network: Network) {
                     connectivity.bindProcessToNetwork(null)
@@ -275,41 +302,73 @@ class WifiTransport(
             "port" to port.toString(),
         )
 
-        fun advertise() {
+        // Every step here is asynchronous. Each one starts only when the one
+        // before it has answered: starting them together made the later ones
+        // fail as "busy" on some phones.
+        fun addService() {
             val info = WifiP2pDnsSdServiceInfo.newInstance("zajel-${fingerprint.take(8)}", SERVICE_TYPE, txt)
-            manager.clearLocalServices(ch, null)
             manager.addLocalService(ch, info, object : WifiP2pManager.ActionListener {
                 override fun onSuccess() {
                     directReceiverActive = true
+                    note("direct receiver: service advertised")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        manager.requestGroupInfo(ch) { group ->
+                            note("direct receiver: group ${group?.networkName}, ${group?.frequency} MHz")
+                        }
+                    }
                     callback(Result.success(Unit))
                 }
 
-                override fun onFailure(reason: Int) = callback(Result.failure(p2pFailure(reason)))
+                override fun onFailure(reason: Int) {
+                    note("direct receiver: addLocalService failed ($reason)")
+                    callback(Result.failure(p2pFailure(reason)))
+                }
+            })
+        }
+
+        fun advertise() {
+            manager.clearLocalServices(ch, object : WifiP2pManager.ActionListener {
+                override fun onSuccess() = addService()
+                override fun onFailure(reason: Int) = addService()
             })
         }
 
         val listener = object : WifiP2pManager.ActionListener {
-            override fun onSuccess() = advertise()
-            override fun onFailure(reason: Int) = callback(Result.failure(p2pFailure(reason)))
+            override fun onSuccess() {
+                note("direct receiver: group created")
+                advertise()
+            }
+
+            override fun onFailure(reason: Int) {
+                note("direct receiver: createGroup failed ($reason)")
+                callback(Result.failure(p2pFailure(reason)))
+            }
         }
 
-        manager.removeGroup(ch, null) // clear any old group first
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Our own credentials: senders get them through service discovery and
-            // join without a prompt. On 5 GHz when the radio supports it.
-            val name = "DIRECT-zj-${randomText(6)}"
-            val pass = randomText(16)
-            txt["ssid"] = name
-            txt["pass"] = pass
-            val builder = WifiP2pConfig.Builder()
-                .setNetworkName(name)
-                .setPassphrase(pass)
-                .enablePersistentMode(false)
-            if (supports5GHz()) builder.setGroupOperatingBand(WifiP2pConfig.GROUP_OWNER_BAND_5GHZ)
-            manager.createGroup(ch, builder.build(), listener)
-        } else {
-            manager.createGroup(ch, listener)
+        fun createGroup() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Our own credentials: senders get them through service discovery
+                // and join without a prompt. On 5 GHz when the radio supports it.
+                val name = "DIRECT-zj-${randomText(6)}"
+                val pass = randomText(16)
+                txt["ssid"] = name
+                txt["pass"] = pass
+                val builder = WifiP2pConfig.Builder()
+                    .setNetworkName(name)
+                    .setPassphrase(pass)
+                    .enablePersistentMode(false)
+                if (supports5GHz()) builder.setGroupOperatingBand(WifiP2pConfig.GROUP_OWNER_BAND_5GHZ)
+                manager.createGroup(ch, builder.build(), listener)
+            } else {
+                manager.createGroup(ch, listener)
+            }
         }
+
+        // Clear any old group first, and wait for that to finish.
+        manager.removeGroup(ch, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() = createGroup()
+            override fun onFailure(reason: Int) = createGroup() // there was none
+        })
     }
 
     override fun stopDirectReceiver() {
@@ -335,7 +394,7 @@ class WifiTransport(
             { fullDomain: String, record: Map<String, String>, device: WifiP2pDevice ->
                 val fingerprint = record["fp"]
                 val port = record["port"]?.toLongOrNull()
-                Log.d(TAG, "service seen: $fullDomain from ${device.deviceName}")
+                note("search: service seen: $fullDomain")
                 if (fullDomain.contains("_zajel") && fingerprint != null && port != null) {
                     found[device.deviceAddress] = NativeDirectPeer(
                         deviceAddress = device.deviceAddress,
@@ -364,12 +423,12 @@ class WifiTransport(
             if (finished) return
             manager.discoverServices(ch, object : WifiP2pManager.ActionListener {
                 override fun onSuccess() {
-                    Log.d(TAG, "discoverServices started")
+                    note("search: discoverServices started")
                 }
 
                 override fun onFailure(reason: Int) {
                     // BUSY is normal while a previous query is still running.
-                    Log.w(TAG, "discoverServices failed ($reason)")
+                    note("search: discoverServices failed ($reason)")
                     if (reason == WifiP2pManager.P2P_UNSUPPORTED) finish(Result.failure(p2pFailure(reason)))
                 }
             })
@@ -391,11 +450,11 @@ class WifiTransport(
                     override fun onSuccess() {
                         manager.discoverPeers(ch, object : WifiP2pManager.ActionListener {
                             override fun onSuccess() {
-                                Log.d(TAG, "discoverPeers started")
+                                note("search: discoverPeers started")
                             }
 
                             override fun onFailure(reason: Int) {
-                                Log.w(TAG, "discoverPeers failed ($reason)")
+                                note("search: discoverPeers failed ($reason)")
                             }
                         })
                         repeatQuery(0)
@@ -407,9 +466,14 @@ class WifiTransport(
         })
 
         main.postDelayed({
-            Log.d(TAG, "discovery finished with ${found.size} peer(s)")
-            manager.stopPeerDiscovery(ch, null)
-            finish(Result.success(found.values.toList()))
+            // How many Wi-Fi Direct devices the radio saw at all tells a search
+            // that sees nothing from one that sees devices but not our service.
+            manager.requestPeers(ch) { peers ->
+                val inRange = peers?.deviceList?.size ?: 0
+                note("search: finished, ${found.size} Zajel receiver(s), $inRange Wi-Fi Direct device(s) in range")
+                manager.stopPeerDiscovery(ch, null)
+                finish(Result.success(found.values.toList()))
+            }
         }, timeoutMs)
     }
 
@@ -488,6 +552,7 @@ class WifiTransport(
         private const val JOIN_TIMEOUT_MS = 45_000
         private const val SERVICE_TYPE = "_zajel._tcp"
         private const val TAG = "ZajelWifi"
+        private const val MAX_TRACE = 200
         private const val QUERY_INTERVAL_MS = 4_000L
         private const val MAX_QUERY_ROUNDS = 6
     }

@@ -130,6 +130,7 @@
   "mediaUnreadable": "This file could not be read",
   "filesAndroidNote": "Android does not let apps list every file automatically. Pick files from the file manager.",
   "reviewSelection": "Review selection",
+  "qrShowLanNote": "Devices on the same Wi-Fi can also send to this device without scanning.",
   "qrShowIntro": "Ask the other device to scan this code. It will connect straight to this device, with no internet or router.",
   "qrPinLabel": "PIN",
   "qrNetworkLabel": "Network",

@@ -47,8 +47,10 @@ than it had to be:
 - Files between 1 MB and 8 MB went through `_uploadOne`: **one plain TCP stream**. A single stream is
   limited by its TCP window divided by the round-trip time, so a router (high RTT) was far slower than
   a direct hotspot (low RTT), where the window is never the limit.
-- **Not done yet:** splitting files of 1 MB or more into parallel pieces. Files under 8 MB still go
-  through `_uploadOne` (the threshold is `UploadOptions.chunkSize`).
+- Done: a Zajel-to-Zajel upload splits **any file of 1 MB or more** into pieces, so every connection
+  carries one (`UploadOptions.pieceSizeFor`: 3 MB goes as three 1 MB pieces, 20 MB as four 5 MB pieces,
+  big files as 8 MB pieces). On an Android receiver these pieces also take the native data path instead
+  of the Dart upload route, which hashes every byte. Tested on loopback; not measured on phones.
 - Done: one `HttpClient` is reused for the whole batch, so the TLS connections stay open across files
   instead of a fresh handshake per file. Not measured on phones.
 

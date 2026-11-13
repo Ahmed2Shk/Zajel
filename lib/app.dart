@@ -6,7 +6,6 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/history/history_store.dart';
 import 'features/receive/incoming_transfer_host.dart';
-import 'features/send/direct_controller.dart';
 import 'features/settings/app_settings.dart';
 import 'l10n/l10n.dart';
 
@@ -17,8 +16,6 @@ class ZajelApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
     ref.watch(historyRecorderProvider); // records received files
-    // Advertises this device over Wi-Fi Direct for router-free transfers.
-    ref.watch(directControllerProvider);
 
     return MaterialApp.router(
       onGenerateTitle: (context) => context.l10n.appName,

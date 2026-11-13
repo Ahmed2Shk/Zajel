@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../core/router/app_router.dart';
+import '../../core/transfer/transfer_providers.dart';
 import '../../core/widgets/zajel_widgets.dart';
 import '../../l10n/l10n.dart';
 import 'qr_host.dart';
@@ -130,6 +133,18 @@ class _QrShowScreenState extends ConsumerState<QrShowScreen> {
                 ],
               ),
             },
+            const SizedBox(height: 16),
+            Text(l10n.qrShowLanNote, textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
+            if (ref.watch(transportManagerProvider) != null)
+              Center(
+                child: TextButton.icon(
+                  icon: const Icon(Icons.wifi_tethering),
+                  label: Text(l10n.wifiDirect),
+                  // Replaces this screen: its hotspot and a Wi-Fi Direct group
+                  // cannot run together on many phones.
+                  onPressed: () => context.pushReplacement(AppRoutes.discovery),
+                ),
+              ),
           ],
         ),
       ),

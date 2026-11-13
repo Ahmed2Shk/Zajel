@@ -939,6 +939,11 @@ interface TransportApi {
   fun isWifiEnabled(): Boolean
   fun supports5GHz(): Boolean
   /**
+   * What the Wi-Fi code did since the last call, one line per step, for the
+   * exported log. Contains no passwords.
+   */
+  fun takeTransportLog(): List<String>
+  /**
    * Starts a LocalOnlyHotspot and returns its name and password. The system
    * chooses the band; an app cannot pick 5 GHz for this kind of hotspot.
    */
@@ -1024,6 +1029,21 @@ interface TransportApi {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
               listOf(api.supports5GHz())
+            } catch (exception: Throwable) {
+              PlatformApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.zajel.TransportApi.takeTransportLog$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              listOf(api.takeTransportLog())
             } catch (exception: Throwable) {
               PlatformApiPigeonUtils.wrapError(exception)
             }

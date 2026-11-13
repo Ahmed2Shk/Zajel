@@ -437,6 +437,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reviewSelection => 'مراجعة المحدد';
 
   @override
+  String get qrShowLanNote =>
+      'الأجهزة على نفس الواي فاي تستطيع الإرسال إلى هذا الجهاز بدون مسح الرمز.';
+
+  @override
   String get qrShowIntro =>
       'اطلب من الجهاز الآخر مسح هذا الرمز. سيتصل بهذا الجهاز مباشرة بدون إنترنت أو راوتر.';
 

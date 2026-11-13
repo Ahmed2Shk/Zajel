@@ -439,6 +439,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reviewSelection => 'Review selection';
 
   @override
+  String get qrShowLanNote =>
+      'Devices on the same Wi-Fi can also send to this device without scanning.';
+
+  @override
   String get qrShowIntro =>
       'Ask the other device to scan this code. It will connect straight to this device, with no internet or router.';
 

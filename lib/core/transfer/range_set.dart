@@ -22,6 +22,10 @@ class RangeSet {
   bool isComplete(int size) =>
       size == 0 || (_ranges.length == 1 && _ranges[0] == (0, size));
 
+  /// Whether all of `[start, end)` has arrived.
+  bool contains(int start, int end) =>
+      end <= start || _ranges.any((r) => r.$1 <= start && end <= r.$2);
+
   void add(int start, int end) {
     if (end <= start) return;
     var newStart = start;

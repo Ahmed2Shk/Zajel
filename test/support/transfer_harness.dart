@@ -62,7 +62,21 @@ class TransferHarness {
 
   Future<void> dispose() async {
     await server.stop();
-    await downloads.delete(recursive: true);
+    await deleteTestDir(downloads);
+  }
+}
+
+/// Removes a test folder. On Windows a file that was just written can still be
+/// held for a moment (by the virus scanner, for one), so this tries a few
+/// times; a folder that stays behind in the temp directory is not a failure.
+Future<void> deleteTestDir(Directory dir) async {
+  for (var attempt = 0; attempt < 20; attempt++) {
+    try {
+      if (await dir.exists()) await dir.delete(recursive: true);
+      return;
+    } on FileSystemException {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
   }
 }
 

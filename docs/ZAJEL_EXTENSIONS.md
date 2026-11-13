@@ -15,11 +15,12 @@ A stock receiver sends neither header, so the sender uses the plain LocalSend up
 
 `POST /api/localsend/v2/upload?sessionId=&fileId=&token=&offset=<n>` with `Content-Length` = chunk length.
 
-- Chunks are 8 MB by default and go over up to 4 connections, in any order.
+- Chunks are at most 8 MB and go over up to 4 connections, in any order. A file between 1 MB and 32 MB is
+  cut into equal pieces (at least 1 MB each) so that every connection carries one.
 - The receiver writes each chunk at its offset, tracks the byte ranges received, and finishes the file when
   the ranges cover it. A retried chunk is harmless. If the file has a `sha256`, it is checked at the end
   (`422` on mismatch).
-- Files smaller than one chunk use the plain whole-file upload.
+- Files smaller than 1 MB use the plain whole-file upload.
 
 ## Resume
 
@@ -27,6 +28,14 @@ A stock receiver sends neither header, so the sender uses the plain LocalSend up
 A sender that lost its connection calls `upload` again on the same session; chunked files skip what the
 receiver already holds. Dropped connections are retried automatically (5 times, 2 s apart).
 Resume works within a session. If the app restarts, the session is gone and the transfer starts over.
+
+A request whose answer was lost is safe to repeat. Uploading a file that is already complete is answered
+`200` and its body is dropped (never a second copy). For 60 seconds after the last file of a session, the
+receiver still answers `progress`, `tar-status` and repeated uploads for that session, so a sender that
+missed the final answer learns the transfer is done. When a chunk is refused, the sender asks `progress`
+before failing: a chunk the receiver holds counts as sent.
+
+A file that was still arriving when the receiver cancelled the session is not saved.
 
 A session with no traffic for 2 minutes is dropped on the receiver, which removes the partial file and
 releases the foreground service.

@@ -94,7 +94,10 @@ class HomeScreen extends ConsumerWidget {
               icon: Icons.south_west,
               title: l10n.receive,
               subtitle: l10n.receiveSubtitle,
-              onTap: () => context.push(AppRoutes.discovery),
+              // Straight to the waiting screen with the QR code: the direct
+              // link it sets up is the fastest way in. Devices on the same
+              // Wi-Fi can send to this one from any screen anyway.
+              onTap: () => context.push(AppRoutes.qrShow),
             ),
             const SizedBox(height: 14),
             Row(

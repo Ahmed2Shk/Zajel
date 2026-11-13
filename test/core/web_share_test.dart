@@ -67,8 +67,8 @@ void main() {
     client.close(force: true);
     await server.stop();
     await receiver.stop();
-    await downloads.delete(recursive: true);
-    await source.delete(recursive: true);
+    await deleteTestDir(downloads);
+    await deleteTestDir(source);
   });
 
   Uri url(String path, {String? token, Map<String, String> extra = const {}}) =>

@@ -52,7 +52,7 @@ class SendException implements Exception {
 }
 
 class SendSession {
-  const SendSession({
+  SendSession({
     required this.sessionId,
     required this.tokens,
     required this.target,
@@ -60,6 +60,10 @@ class SendSession {
     this.dataPort,
     this.tarToken,
   });
+
+  /// Ids of the files this sender has already delivered in full. A resumed
+  /// upload skips them instead of sending them again.
+  final Set<String> delivered = {};
 
   final String sessionId;
   final Map<String, String> tokens;
@@ -83,11 +87,28 @@ class UploadOptions {
     this.retries = 3,
     this.tarMaxFileSize = 256 * 1024,
     this.tarMinFiles = 4,
+    this.minChunkedSize = 1024 * 1024,
   });
 
-  /// Chunks are 4-8 MB: big enough to keep the link busy, small enough that a
-  /// dropped connection loses little work.
+  /// The largest chunk. 8 MB: big enough to keep the link busy, small enough
+  /// that a dropped connection loses little work.
   final int chunkSize;
+
+  /// Files from this size up are sent in parallel pieces. Smaller ones are not
+  /// worth the extra requests.
+  final int minChunkedSize;
+
+  /// A file is sent in pieces from this size.
+  int get chunkedFrom => minChunkedSize < chunkSize ? minChunkedSize : chunkSize;
+
+  /// The piece size for a file of [size] bytes: big files use [chunkSize];
+  /// a medium file is cut so that every connection gets a piece, instead of
+  /// travelling as one stream (which a slow or distant router throttles).
+  int pieceSizeFor(int size) {
+    if (chunkSize <= minChunkedSize) return chunkSize;
+    final even = (size / parallel).ceil();
+    return even.clamp(minChunkedSize, chunkSize);
+  }
 
   /// Simultaneous TCP connections.
   final int parallel;
@@ -208,8 +229,19 @@ class SendClient {
               file,
         ];
         if (small.length >= options.tarMinFiles) {
-          await _uploadTar(session, tarToken, small, client, onProgress, isCancelled);
           bundled.addAll(small.map((f) => f.id));
+          final todo = [
+            for (final file in small)
+              if (!session.delivered.contains(file.id)) file,
+          ];
+          for (final file in small.where((f) => session.delivered.contains(f.id))) {
+            onProgress?.call(file.id, file.size);
+          }
+          if (todo.isNotEmpty) {
+            await _uploadTar(session, tarToken, todo, client, onProgress, isCancelled);
+          }
+          if (isCancelled?.call() ?? false) return;
+          session.delivered.addAll(bundled);
         }
       }
 
@@ -217,8 +249,13 @@ class SendClient {
         final token = session.tokens[file.id];
         if (token == null) continue; // declined by the receiver
         if (bundled.contains(file.id)) continue;
+        if (session.delivered.contains(file.id)) {
+          // Delivered before the connection dropped: not sent a second time.
+          onProgress?.call(file.id, file.size);
+          continue;
+        }
         if (isCancelled?.call() ?? false) return;
-        if (session.chunked && file.size >= options.chunkSize) {
+        if (session.chunked && file.size >= options.chunkedFrom) {
           await _uploadChunked(
             session,
             file,
@@ -231,6 +268,9 @@ class SendClient {
         } else {
           await _uploadOne(session, file, token, client, onProgress, isCancelled);
         }
+        // A cancelled upload returns quietly with the file only partly sent.
+        if (isCancelled?.call() ?? false) return;
+        session.delivered.add(file.id);
       }
     } finally {
       client.close(force: true);
@@ -320,7 +360,7 @@ class SendClient {
       return;
     }
     final pending = Queue<(int, int)>.of(
-      have.missing(file.size, options.chunkSize),
+      have.missing(file.size, options.pieceSizeFor(file.size)),
     );
     var sent = have.covered;
     onProgress?.call(file.id, sent);
@@ -379,6 +419,18 @@ class SendClient {
                 (e is SocketException || e is TlsException)) {
               useDataPort = false;
               continue; // switching routes is not a retry
+            }
+            if (e is SendException && e.statusCode != null && !isTransientError(e)) {
+              // A refusal can also mean "already have it": the chunk arrived
+              // but its answer was lost, and the receiver has since closed the
+              // file or the session. Ask before giving up.
+              final held = await _receivedRanges(session, file, token, client)
+                  .catchError((_) => RangeSet());
+              if (held.contains(start, end)) {
+                sent += end - start;
+                onProgress?.call(file.id, sent);
+                break;
+              }
             }
             if (attempt++ >= options.retries || !isTransientError(e)) {
               rethrow;

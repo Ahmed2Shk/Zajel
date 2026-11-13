@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/transfer/transfer_providers.dart';
@@ -34,9 +32,11 @@ class DirectState {
   );
 }
 
-/// Wi-Fi Direct: advertise this device so senders can reach it directly (no
-/// router), or look for receivers. The device advertises by itself once the
-/// service is ready; searching starts from the discovery screen.
+/// Wi-Fi Direct on the discovery screen: look for receivers, or be one.
+///
+/// Nothing starts by itself. Advertising creates a Wi-Fi Direct group, which
+/// asks for a permission, keeps the radio busy and, on many phones, cannot run
+/// next to the QR hotspot; so it only runs while the user has switched it on.
 class DirectController extends Notifier<DirectState> {
   // Kept outside the state: cleanup may not read providers or state once the
   // controller is being disposed.
@@ -44,31 +44,8 @@ class DirectController extends Notifier<DirectState> {
 
   @override
   DirectState build() {
-    // Advertise over Wi-Fi Direct as soon as the service is ready, so a nearby
-    // Zajel sender connects device-to-device (the fast 5 GHz path) instead of
-    // relaying through the router. Best-effort: a failure just leaves the LAN
-    // path working.
     ref.onDispose(() => _advertisingManager?.stopAdvertisingDirect());
-    unawaited(_autoAdvertise());
     return const DirectState();
-  }
-
-  Future<void> _autoAdvertise() async {
-    final manager = ref.read(transportManagerProvider);
-    if (manager == null) return; // not Android
-    final service = await ref.read(localSendServiceProvider.future);
-    if (service == null || !ref.mounted) return;
-    try {
-      await manager.advertiseDirect(
-        alias: service.device.alias,
-        fingerprint: service.device.fingerprint,
-        port: service.device.port,
-      );
-      _advertisingManager = manager;
-      if (ref.mounted) state = state.copyWith(visible: true);
-    } on TransportException {
-      // Permissions not granted or Wi-Fi Direct unavailable: stay on LAN.
-    }
   }
 
   Future<void> search() async {
@@ -132,4 +109,4 @@ class DirectController extends Notifier<DirectState> {
 }
 
 final directControllerProvider =
-    NotifierProvider<DirectController, DirectState>(DirectController.new);
+    NotifierProvider.autoDispose<DirectController, DirectState>(DirectController.new);

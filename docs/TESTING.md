@@ -52,6 +52,16 @@ Turn off Wi-Fi networks and mobile data on both phones.
 - [ ] Transfer screens show the Wi-Fi band and link speed; below 3 MB/s on a big transfer a hint suggests QR / Wi-Fi Direct
 - [ ] Browser share text explains that nothing goes through the internet
 
+## After the full review (check each by hand)
+
+- [ ] QR still works both ways and reaches the old speed (the transfer engine changed: files from 1 MB now go in parallel pieces)
+- [ ] A batch of photos (2-6 MB each) over the router: note the speed, compare with before
+- [ ] Home > Receive opens the QR waiting screen; a device on the same Wi-Fi can still send without scanning
+- [ ] The app no longer asks for the Wi-Fi permission at launch, and no "DIRECT-zj-..." network appears until "Visible" is switched on
+- [ ] Wi-Fi Direct: switch "Visible" on (receiver), search (sender), then Settings > export log on BOTH phones. The lines starting with `wifi` say what each phone did: `direct receiver: group created`, `... MHz`, `search: finished, N Zajel receiver(s), M Wi-Fi Direct device(s) in range`
+- [ ] Turn Wi-Fi off on the sender right at the end of a transfer, then on again: the sender must end with "done", not "declined"
+- [ ] Cancel on the receiver in the middle of a file: that file must not appear in the Gallery or Downloads
+
 ## Phase 4 — Desktop and browser
 
 - [ ] Windows ↔ Android both ways

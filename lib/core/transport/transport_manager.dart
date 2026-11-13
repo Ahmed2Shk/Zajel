@@ -170,6 +170,9 @@ abstract class TransportBackend {
   Future<List<DirectPeer>> discoverDirectPeers(Duration timeout);
   Future<String> connectDirect(DirectPeer peer);
   Future<void> disconnectDirect();
+
+  /// What the phone's Wi-Fi code did since the last call, for the log.
+  Future<List<String>> takeLog();
 }
 
 /// The real backend, over the Pigeon-generated Android API. Errors come back
@@ -253,6 +256,9 @@ class PigeonTransportBackend implements TransportBackend {
 
   @override
   Future<void> disconnectDirect() => _api.disconnectDirect();
+
+  @override
+  Future<List<String>> takeLog() => _api.takeTransportLog();
 }
 
 /// A hotspot this device is hosting for a QR pairing.
@@ -273,9 +279,27 @@ class TransportManager {
     Future<List<InternetAddress>> Function()? listAddresses,
     this.addressWait = const Duration(seconds: 6),
     this.addressPoll = const Duration(milliseconds: 300),
+    this.onNote,
   }) : _listAddresses = listAddresses ?? _defaultAddresses;
 
   final TransportBackend backend;
+
+  /// Receives the phone's own account of each Wi-Fi step, for the exported
+  /// log: without it a failed hotspot or Wi-Fi Direct search leaves no trace.
+  final void Function(String note)? onNote;
+
+  /// Moves the phone's Wi-Fi notes into the log. Never fails.
+  Future<void> _flushLog() async {
+    final sink = onNote;
+    if (sink == null) return;
+    try {
+      for (final line in await backend.takeLog()) {
+        sink(line);
+      }
+    } catch (_) {
+      // No notes on this platform.
+    }
+  }
   final Future<List<InternetAddress>> Function() _listAddresses;
   final Duration addressWait;
   final Duration addressPoll;
@@ -299,15 +323,19 @@ class TransportManager {
   /// if none works, [AllTransportsFailed] says why for each.
   Future<PeerEndpoint> establish(Iterable<PeerRoute> routes) async {
     final failures = <TransportException>[];
-    for (final route in prioritized(routes)) {
-      try {
-        return await _connect(route);
-      } on TransportException catch (e) {
-        failures.add(e);
-        await _cleanUp(route);
+    try {
+      for (final route in prioritized(routes)) {
+        try {
+          return await _connect(route);
+        } on TransportException catch (e) {
+          failures.add(e);
+          await _cleanUp(route);
+        }
       }
+      throw AllTransportsFailed(failures);
+    } finally {
+      await _flushLog();
     }
-    throw AllTransportsFailed(failures);
   }
 
   Future<PeerEndpoint> _connect(PeerRoute route) async {
@@ -393,15 +421,19 @@ class TransportManager {
   Future<HostedHotspot> startHotspot() async {
     await _ensureReady(TransportKind.hotspotQr);
     final before = (await _listAddresses()).map((a) => a.address).toSet();
-    final credentials = await backend.startHotspot();
     try {
-      return HostedHotspot(
-        credentials: credentials,
-        address: await _hotspotAddress(before),
-      );
-    } catch (_) {
-      await backend.stopHotspot();
-      rethrow;
+      final credentials = await backend.startHotspot();
+      try {
+        return HostedHotspot(
+          credentials: credentials,
+          address: await _hotspotAddress(before),
+        );
+      } catch (_) {
+        await backend.stopHotspot();
+        rethrow;
+      }
+    } finally {
+      await _flushLog();
     }
   }
 
@@ -432,14 +464,22 @@ class TransportManager {
     required int port,
   }) async {
     await _ensureReady(TransportKind.wifiDirect);
-    await backend.startDirectReceiver(alias, fingerprint, port);
+    try {
+      await backend.startDirectReceiver(alias, fingerprint, port);
+    } finally {
+      await _flushLog();
+    }
   }
 
   Future<void> stopAdvertisingDirect() => backend.stopDirectReceiver();
 
   Future<List<DirectPeer>> findDirectPeers({Duration timeout = const Duration(seconds: 15)}) async {
     await _ensureReady(TransportKind.wifiDirect);
-    return backend.discoverDirectPeers(timeout);
+    try {
+      return await backend.discoverDirectPeers(timeout);
+    } finally {
+      await _flushLog();
+    }
   }
 }
 

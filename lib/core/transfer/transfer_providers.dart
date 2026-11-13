@@ -395,7 +395,11 @@ final webShareProvider = NotifierProvider<WebShareNotifier, WebShareStatus?>(
 /// Router-free transports (QR hotspot and Wi-Fi Direct). Null away from Android.
 final transportManagerProvider = Provider<TransportManager?>((ref) {
   if (kIsWeb || !Platform.isAndroid) return null;
-  return TransportManager(PigeonTransportBackend());
+  final log = ref.read(appLogProvider);
+  return TransportManager(
+    PigeonTransportBackend(),
+    onNote: log == null ? null : (note) => log.info('wifi', note),
+  );
 });
 
 /// What is being received right now (or was just received), or null.

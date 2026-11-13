@@ -62,6 +62,16 @@ class FakeTransportBackend implements TransportBackend {
 
   @override
   Future<void> disconnectDirect() async => calls.add('disconnectDirect');
+
+  /// Notes the phone would have recorded; handed out once.
+  final notes = <String>[];
+
+  @override
+  Future<List<String>> takeLog() async {
+    final lines = [...notes];
+    notes.clear();
+    return lines;
+  }
 }
 
 
