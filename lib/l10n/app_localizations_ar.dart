@@ -173,6 +173,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'الجهاز الآخر مشغول بنقل آخر الآن. انتظر حتى ينتهي ثم حاول من جديد.';
 
   @override
+  String get serviceFailed =>
+      'تعذّر تشغيل خدمة النقل، فلا يمكن الإرسال ولا الاستقبال الآن. أغلق التطبيقات المشابهة ثم أعد المحاولة.';
+
+  @override
   String get sendFailed => 'فشل الإرسال';
 
   @override

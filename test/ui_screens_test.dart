@@ -46,6 +46,7 @@ Future<ProviderContainer> _pump(
   WidgetTester tester, {
   Map<String, Object> prefs = const {},
   List<Override> overrides = const [],
+  Override? service,
   Locale? locale,
 }) async {
   SharedPreferences.setMockInitialValues(prefs);
@@ -53,7 +54,7 @@ Future<ProviderContainer> _pump(
   final container = ProviderContainer(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(instance),
-      localSendServiceProvider.overrideWith((ref) async => null),
+      service ?? localSendServiceProvider.overrideWith((ref) async => null),
       ...overrides,
     ],
   );
@@ -92,6 +93,28 @@ void main() {
       expect(find.text('استقبال'), findsOneWidget);
       expect(find.text('لا توجد عمليات نقل بعد'), findsOneWidget);
       expect(find.text('جاهز للإرسال والاستقبال'), findsOneWidget);
+    });
+
+    testWidgets('a service that cannot start is shown, with a retry that starts it again', (tester) async {
+      var attempts = 0;
+      var portFree = false;
+      await _pump(
+        tester,
+        service: localSendServiceProvider.overrideWith((ref) async {
+          attempts++;
+          if (!portFree) throw const SocketException('port in use');
+          return null;
+        }),
+      );
+      expect(find.textContaining('تعذّر تشغيل خدمة النقل'), findsOneWidget);
+
+      portFree = true; // the other app was closed
+      final before = attempts;
+      await tester.tap(find.text('إعادة المحاولة'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(attempts, greaterThan(before));
+      expect(find.textContaining('تعذّر تشغيل خدمة النقل'), findsNothing);
     });
 
     testWidgets('lists recent transfers with direction and size', (tester) async {
@@ -292,6 +315,21 @@ void main() {
       await _go(tester, container, AppRoutes.transfer);
       expect(find.text('هذا الجهاز لم يعد متاحاً. ابحث من جديد.'), findsOneWidget);
       expect(find.textContaining('SocketException'), findsNothing);
+    });
+
+    testWidgets('a busy receiver and a dead service each get their own message', (tester) async {
+      for (final (error, message) in [
+        ('busy', 'الجهاز الآخر مشغول بنقل آخر الآن'),
+        ('service', 'تعذّر تشغيل خدمة النقل'),
+      ]) {
+        final job = SendJob(status: SendStatus.failed, target: _device('Anas', 'b'), error: error);
+        final container = await _pump(tester, overrides: [
+          sendJobProvider.overrideWith(() => _FakeSendJob(job)),
+        ]);
+        await _go(tester, container, AppRoutes.transfer);
+        expect(find.textContaining(message), findsOneWidget, reason: error);
+        expect(find.textContaining('Blocked by another session'), findsNothing);
+      }
     });
 
     testWidgets('a finished send shows the summary', (tester) async {

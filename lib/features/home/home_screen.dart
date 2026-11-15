@@ -19,7 +19,10 @@ class HomeScreen extends ConsumerWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final service = ref.watch(localSendServiceProvider).value;
+    final serviceState = ref.watch(localSendServiceProvider);
+    final service = serviceState.value;
+    // Riverpod tries a failed start again by itself; until one works, say so.
+    final serviceFailed = serviceState.hasError && service == null;
     final history = ref.watch(historyProvider);
 
     return Scaffold(
@@ -42,6 +45,32 @@ class HomeScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
+            if (serviceFailed) ...[
+              // Without the service nothing can be sent or received: say it,
+              // do not leave the screens waiting.
+              ZajelCard(
+                accent: scheme.error,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.error_outline, color: scheme.error),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(l10n.serviceFailed)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.refresh),
+                      label: Text(l10n.retry),
+                      onPressed: () => ref.invalidate(localSendServiceProvider),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             ZajelCard(
               child: Row(
                 children: [

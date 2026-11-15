@@ -98,12 +98,16 @@ class LocalSendService {
     AppLog? log,
     int port = localSendDefaultPort,
   }) async {
+    // The usual port can be taken (the LocalSend app running on this phone
+    // uses the same one). The server then listens on the next free port and
+    // says so in its announcements; discovery itself stays on the shared port.
+    final serverPort = await _freePort(port);
     final device = DeviceInfo(
       alias: alias,
       fingerprint: identity.fingerprint,
       deviceModel: deviceModel,
       deviceType: deviceType,
-      port: port,
+      port: serverPort,
     );
     await downloadDirectory.create(recursive: true);
 
@@ -130,9 +134,24 @@ class LocalSendService {
     );
 
     service._log = log;
-    await service._begin(port);
-    log?.info('service', 'started as ${device.alias} on port $port');
+    await service._begin(serverPort);
+    log?.info('service', 'started as ${device.alias} on port $serverPort');
     return service;
+  }
+
+  /// [preferred] if nothing else listens on it, otherwise one of the next few.
+  static Future<int> _freePort(int preferred) async {
+    for (var candidate = preferred; candidate < preferred + 10; candidate++) {
+      if (candidate == WebShareServer.defaultPort) continue; // the browser page
+      try {
+        final probe = await ServerSocket.bind(InternetAddress.anyIPv4, candidate);
+        await probe.close();
+        return candidate;
+      } on SocketException {
+        // Taken: try the next one.
+      }
+    }
+    return preferred; // let the real bind report the error
   }
 
   Future<void> _begin(int port) async {

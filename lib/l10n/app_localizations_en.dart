@@ -174,6 +174,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The other device is busy with another transfer. Wait until it ends, then try again.';
 
   @override
+  String get serviceFailed =>
+      'The transfer service could not start, so nothing can be sent or received right now. Close similar apps, then try again.';
+
+  @override
   String get sendFailed => 'Sending failed';
 
   @override

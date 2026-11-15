@@ -214,8 +214,13 @@ class SendJobNotifier extends Notifier<SendJob> {
 
     LocalSendService? service;
     try {
-      service = await ref.read(localSendServiceProvider.future);
+      try {
+        service = await ref.read(localSendServiceProvider.future);
+      } catch (e, stack) {
+        ref.read(appLogProvider)?.error('service', e, stack);
+      }
       if (service == null) {
+        // The transfer service did not start: say so instead of waiting forever.
         if (live()) state = state.copyWith(status: SendStatus.failed, error: 'service');
         return;
       }

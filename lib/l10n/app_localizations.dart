@@ -410,6 +410,12 @@ abstract class AppLocalizations {
   /// **'الجهاز الآخر مشغول بنقل آخر الآن. انتظر حتى ينتهي ثم حاول من جديد.'**
   String get receiverBusy;
 
+  /// No description provided for @serviceFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تشغيل خدمة النقل، فلا يمكن الإرسال ولا الاستقبال الآن. أغلق التطبيقات المشابهة ثم أعد المحاولة.'**
+  String get serviceFailed;
+
   /// No description provided for @sendFailed.
   ///
   /// In ar, this message translates to:
