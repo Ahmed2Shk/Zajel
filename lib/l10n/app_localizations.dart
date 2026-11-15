@@ -380,6 +380,30 @@ abstract class AppLocalizations {
   /// **'رفض الجهاز الآخر الطلب'**
   String get declinedByReceiver;
 
+  /// No description provided for @stopTransferTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف النقل؟'**
+  String get stopTransferTitle;
+
+  /// No description provided for @stopTransferBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'النقل ما زال جارياً. إذا خرجت الآن سيتوقف.'**
+  String get stopTransferBody;
+
+  /// No description provided for @stopTransferConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف النقل'**
+  String get stopTransferConfirm;
+
+  /// No description provided for @keepTransferring.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة النقل'**
+  String get keepTransferring;
+
   /// No description provided for @sendFailed.
   ///
   /// In ar, this message translates to:

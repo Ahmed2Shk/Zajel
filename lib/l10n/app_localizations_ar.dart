@@ -157,6 +157,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get declinedByReceiver => 'رفض الجهاز الآخر الطلب';
 
   @override
+  String get stopTransferTitle => 'إيقاف النقل؟';
+
+  @override
+  String get stopTransferBody => 'النقل ما زال جارياً. إذا خرجت الآن سيتوقف.';
+
+  @override
+  String get stopTransferConfirm => 'إيقاف النقل';
+
+  @override
+  String get keepTransferring => 'متابعة النقل';
+
+  @override
   String get sendFailed => 'فشل الإرسال';
 
   @override

@@ -107,6 +107,31 @@ class _TransferProgressScreenState
     await notifier.sendVia([QrRoute(payload, alreadyJoined: true)]);
   }
 
+  /// Back during a transfer: stop it only if the user says so.
+  Future<void> _confirmStop() async {
+    final l10n = context.l10n;
+    final stop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.stopTransferTitle),
+        content: Text(l10n.stopTransferBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.keepTransferring),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.stopTransferConfirm),
+          ),
+        ],
+      ),
+    );
+    if (stop != true || !mounted) return;
+    await ref.read(sendJobProvider.notifier).cancel();
+    if (mounted) context.go(AppRoutes.home);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -148,215 +173,237 @@ class _TransferProgressScreenState
         .length;
     final target = job.target;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.transferTitle)),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                children: [
-                  if (target != null)
-                    ZajelCard(
-                      child: Row(
-                        children: [
-                          IconBadge(
-                            icon: deviceIconFor(target.info.deviceType),
-                            color: scheme.secondary,
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l10n.connectedTo,
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                                Text(
-                                  target.info.alias,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                // Before the route is set up there is no address yet.
-                                if (!target.address.isLoopback)
+    // While a transfer runs, Back must not leave it going with no screen (a
+    // second send could then start on top of it): it asks first.
+    final busy =
+        job.status == SendStatus.connecting || job.status == SendStatus.sending;
+
+    return PopScope(
+      canPop: !busy,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmStop();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.transferTitle),
+          automaticallyImplyLeading: !busy,
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                  children: [
+                    if (target != null)
+                      ZajelCard(
+                        child: Row(
+                          children: [
+                            IconBadge(
+                              icon: deviceIconFor(target.info.deviceType),
+                              color: scheme.secondary,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
-                                    target.address.address,
+                                    l10n.connectedTo,
                                     style: theme.textTheme.bodySmall,
                                   ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(height: 14),
-                  if (failed)
-                    ZajelCard(
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 56,
-                            color: scheme.error,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            job.error == 'unreachable'
-                                ? l10n.deviceGone
-                                : job.error == 'declined'
-                                ? l10n.declinedByReceiver
-                                : transportFailureOf(job.error) != null
-                                ? transportMessage(l10n, transportFailureOf(job.error)!)
-                                : '${l10n.sendFailed}\n${job.error ?? ''}',
-                            textAlign: TextAlign.center,
-                          ),
-                          if (transportFailureOf(job.error) != null &&
-                              ref.read(sendJobProvider.notifier).lastQrPayload != null) ...[
-                            const SizedBox(height: 12),
-                            OutlinedButton.icon(
-                              icon: const Icon(Icons.wifi_password),
-                              label: Text(l10n.joinManually),
-                              onPressed: _joinManually,
+                                  Text(
+                                    target.info.alias,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  // Before the route is set up there is no address yet.
+                                  if (!target.address.isLoopback)
+                                    Text(
+                                      target.address.address,
+                                      style: theme.textTheme.bodySmall,
+                                    ),
+                                ],
+                              ),
                             ),
                           ],
-                        ],
-                      ),
-                    )
-                  else
-                    ZajelCard(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                (job.bytesPerSecond / (1024 * 1024))
-                                    .toStringAsFixed(1),
-                                style: theme.textTheme.displayLarge?.copyWith(
-                                  color: scheme.primary,
-                                  fontWeight: FontWeight.w800,
-                                  shadows: [
-                                    Shadow(
-                                      color: scheme.primary.withValues(
-                                        alpha: 0.5,
-                                      ),
-                                      blurRadius: 24,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text('MB/s', style: theme.textTheme.titleMedium),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _Stat(
-                                  label: l10n.transferredSoFar,
-                                  value:
-                                      '${formatBytes(job.sentBytes)} / ${formatBytes(job.totalBytes)}',
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _Stat(
-                                  label: l10n.etaLabel,
-                                  value: etaSeconds == null
-                                      ? '—'
-                                      : formatEta(context, etaSeconds),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  l10n.overallProgress,
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              ),
-                              Text(
-                                '${(job.fraction * 100).round()}%',
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  color: scheme.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          LinearProgressIndicator(
-                            value: job.status == SendStatus.connecting
-                                ? null
-                                : job.fraction,
-                            minHeight: 10,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (!failed)
-                    SlowLinkHint(
-                      bytesPerSecond: job.bytesPerSecond,
-                      transferredBytes: job.sentBytes,
-                    ),
-                  const SizedBox(height: 22),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.fileListTitle(job.files.length),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
                         ),
                       ),
-                      Text(
-                        '$finished / ${job.files.length}',
-                        style: theme.textTheme.bodySmall,
+                    const SizedBox(height: 14),
+                    if (failed)
+                      ZajelCard(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 56,
+                              color: scheme.error,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              job.error == 'unreachable'
+                                  ? l10n.deviceGone
+                                  : job.error == 'declined'
+                                  ? l10n.declinedByReceiver
+                                  : transportFailureOf(job.error) != null
+                                  ? transportMessage(
+                                      l10n,
+                                      transportFailureOf(job.error)!,
+                                    )
+                                  : '${l10n.sendFailed}\n${job.error ?? ''}',
+                              textAlign: TextAlign.center,
+                            ),
+                            if (transportFailureOf(job.error) != null &&
+                                ref
+                                        .read(sendJobProvider.notifier)
+                                        .lastQrPayload !=
+                                    null) ...[
+                              const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                icon: const Icon(Icons.wifi_password),
+                                label: Text(l10n.joinManually),
+                                onPressed: _joinManually,
+                              ),
+                            ],
+                          ],
+                        ),
+                      )
+                    else
+                      ZajelCard(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  (job.bytesPerSecond / (1024 * 1024))
+                                      .toStringAsFixed(1),
+                                  style: theme.textTheme.displayLarge?.copyWith(
+                                    color: scheme.primary,
+                                    fontWeight: FontWeight.w800,
+                                    shadows: [
+                                      Shadow(
+                                        color: scheme.primary.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        blurRadius: 24,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'MB/s',
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _Stat(
+                                    label: l10n.transferredSoFar,
+                                    value:
+                                        '${formatBytes(job.sentBytes)} / ${formatBytes(job.totalBytes)}',
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _Stat(
+                                    label: l10n.etaLabel,
+                                    value: etaSeconds == null
+                                        ? '—'
+                                        : formatEta(context, etaSeconds),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    l10n.overallProgress,
+                                    style: theme.textTheme.bodySmall,
+                                  ),
+                                ),
+                                Text(
+                                  '${(job.fraction * 100).round()}%',
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: scheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            LinearProgressIndicator(
+                              value: job.status == SendStatus.connecting
+                                  ? null
+                                  : job.fraction,
+                              minHeight: 10,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  for (final file in job.files) ...[
-                    _FileRow(
-                      name: file.name,
-                      size: file.size,
-                      sent: job.sentPerFile[file.id] ?? 0,
-                      started: job.sentPerFile.containsKey(file.id),
+                    if (!failed)
+                      SlowLinkHint(
+                        bytesPerSecond: job.bytesPerSecond,
+                        transferredBytes: job.sentBytes,
+                      ),
+                    const SizedBox(height: 22),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.fileListTitle(job.files.length),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '$finished / ${job.files.length}',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 10),
-                  ],
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-              child: FilledButton.icon(
-                style: failed
-                    ? null
-                    : FilledButton.styleFrom(
-                        backgroundColor: scheme.error,
-                        foregroundColor: scheme.onError,
+                    for (final file in job.files) ...[
+                      _FileRow(
+                        name: file.name,
+                        size: file.size,
+                        sent: job.sentPerFile[file.id] ?? 0,
+                        started: job.sentPerFile.containsKey(file.id),
                       ),
-                icon: Icon(failed ? Icons.check : Icons.close),
-                onPressed: () async {
-                  await ref.read(sendJobProvider.notifier).cancel();
-                  if (context.mounted) context.go(AppRoutes.home);
-                },
-                label: Text(failed ? l10n.ok : l10n.cancel),
+                      const SizedBox(height: 10),
+                    ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                child: FilledButton.icon(
+                  style: failed
+                      ? null
+                      : FilledButton.styleFrom(
+                          backgroundColor: scheme.error,
+                          foregroundColor: scheme.onError,
+                        ),
+                  icon: Icon(failed ? Icons.check : Icons.close),
+                  onPressed: () async {
+                    await ref.read(sendJobProvider.notifier).cancel();
+                    if (context.mounted) context.go(AppRoutes.home);
+                  },
+                  label: Text(failed ? l10n.ok : l10n.cancel),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -383,7 +430,9 @@ class _CopyField extends StatelessWidget {
               SelectableText(
                 value,
                 textDirection: TextDirection.ltr,
-                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),

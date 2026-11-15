@@ -159,8 +159,12 @@ class SendJobNotifier extends Notifier<SendJob> {
   /// How many times a dropped connection is retried before the send fails.
   static const maxResumeAttempts = 5;
 
+  /// The send that owns [state] right now. Every send gets its own token; a
+  /// send that was cancelled (or is otherwise no longer this one) must not
+  /// touch the state, the session or the network of the send that replaced it.
+  Object? _run;
   SendSession? _session;
-  var _cancelled = false;
+  PeerEndpoint? _endpoint;
   List<PeerRoute> _lastRoutes = const [];
 
   /// The QR code this send was started from, so a failed join can be retried
@@ -168,28 +172,54 @@ class SendJobNotifier extends Notifier<SendJob> {
   PairingPayload? get lastQrPayload =>
       _lastRoutes.whereType<QrRoute>().firstOrNull?.payload;
 
+  /// A send is connecting or sending. A second one is not started meanwhile.
+  bool get isBusy =>
+      _run != null &&
+      (state.status == SendStatus.connecting || state.status == SendStatus.sending);
+
   @override
   SendJob build() => const SendJob();
 
+  /// Sends the selected files to [target]. Does nothing while another send is
+  /// running.
   Future<void> send(
     DiscoveredDevice target, {
     String? pin,
     String? pairToken,
     PeerEndpoint? endpoint,
   }) async {
-    final service = await ref.read(localSendServiceProvider.future);
+    if (isBusy) return;
     final files = ref.read(selectedFilesProvider);
-    if (service == null || files.isEmpty) return;
+    if (files.isEmpty) return;
+    final run = _run = Object();
+    _endpoint = endpoint;
+    await _transfer(run, target, files, pin: pin, pairToken: pairToken, endpoint: endpoint);
+  }
 
-    _cancelled = false;
+  Future<void> _transfer(
+    Object run,
+    DiscoveredDevice target,
+    List<SendFile> files, {
+    String? pin,
+    String? pairToken,
+    PeerEndpoint? endpoint,
+  }) async {
+    bool live() => identical(_run, run);
+
     state = SendJob(
       status: SendStatus.connecting,
       target: target,
       files: files,
     );
 
-    await service.beginTransfer();
+    LocalSendService? service;
     try {
+      service = await ref.read(localSendServiceProvider.future);
+      if (service == null) {
+        if (live()) state = state.copyWith(status: SendStatus.failed, error: 'service');
+        return;
+      }
+      await service.beginTransfer();
       final session = await service.client.prepareUpload(
         address: target.address,
         port: target.info.port,
@@ -198,6 +228,13 @@ class SendJobNotifier extends Notifier<SendJob> {
         pin: pin,
         pairToken: pairToken,
       );
+      if (!live()) {
+        // Cancelled while the receiver was deciding: free its session.
+        try {
+          await service.client.cancel(session);
+        } catch (_) {}
+        return;
+      }
       _session = session;
       state = state.copyWith(status: SendStatus.sending);
 
@@ -212,8 +249,9 @@ class SendJobNotifier extends Notifier<SendJob> {
           await service.client.upload(
             session: session,
             files: files,
-            isCancelled: () => _cancelled,
+            isCancelled: () => !live(),
             onProgress: (id, bytes) {
+              if (!live()) return;
               sent[id] = bytes;
               final ms = stopwatch.elapsedMilliseconds;
               // Throttle UI rebuilds to ~10 per second.
@@ -228,7 +266,7 @@ class SendJobNotifier extends Notifier<SendJob> {
           );
           break;
         } catch (e) {
-          if (_cancelled ||
+          if (!live() ||
               attempt++ >= maxResumeAttempts ||
               !SendClient.isTransientError(e)) {
             rethrow;
@@ -236,13 +274,13 @@ class SendJobNotifier extends Notifier<SendJob> {
           await Future<void>.delayed(const Duration(seconds: 2));
         }
       }
-      if (_cancelled) return;
+      if (!live()) return;
       state = state.copyWith(
         status: SendStatus.done,
         sentPerFile: {for (final f in files) f.id: f.size},
       );
     } on SendException catch (e) {
-      if (_cancelled) return;
+      if (!live()) return;
       ref.read(appLogProvider)?.error('send', e);
       state = state.copyWith(
         status: e.pinRequired ? SendStatus.needsPin : SendStatus.failed,
@@ -250,37 +288,46 @@ class SendJobNotifier extends Notifier<SendJob> {
       );
     } on SocketException catch (e, stack) {
       // Connection refused or timed out: the device is gone or unreachable.
-      if (_cancelled) return;
+      if (!live()) return;
       ref.read(appLogProvider)?.error('send', e, stack);
       state = state.copyWith(status: SendStatus.failed, error: 'unreachable');
     } on HandshakeException catch (e, stack) {
       // The device answered with a different identity than the one chosen.
-      if (_cancelled) return;
+      if (!live()) return;
       ref.read(appLogProvider)?.error('send', e, stack);
       state = state.copyWith(status: SendStatus.failed, error: 'unreachable');
     } catch (e, stack) {
-      if (_cancelled) return;
+      if (!live()) return;
       ref.read(appLogProvider)?.error('send', e, stack);
       state = state.copyWith(status: SendStatus.failed, error: e.toString());
     } finally {
-      await service.endTransfer();
-      // Leave the hotspot or Wi-Fi Direct group the transfer used.
-      if (endpoint != null) {
-        await ref.read(transportManagerProvider)?.release(endpoint);
+      await service?.endTransfer();
+      // Leave the hotspot or Wi-Fi Direct group the transfer used. A cancelled
+      // send has already left it in cancel(); doing it again here could cut
+      // off the send that started since.
+      if (live()) {
+        _session = null;
+        _endpoint = null;
+        if (endpoint != null) {
+          await ref.read(transportManagerProvider)?.release(endpoint);
+        }
       }
     }
   }
 
   /// Sends to a peer that may be reachable several ways. The routes are tried
   /// fastest first (Wi-Fi Direct, then a QR hotspot, then the shared Wi-Fi),
-  /// and the first one that connects carries the transfer.
+  /// and the first one that connects carries the transfer. Does nothing while
+  /// another send is running.
   Future<void> sendVia(List<PeerRoute> routes) async {
-    if (routes.isEmpty) return;
+    if (routes.isEmpty || isBusy) return;
     final files = ref.read(selectedFilesProvider);
     if (files.isEmpty) return;
     final manager = ref.read(transportManagerProvider);
 
-    _cancelled = false;
+    final run = _run = Object();
+    bool live() => identical(_run, run);
+    _endpoint = null;
     _lastRoutes = routes;
     final first = routes.first;
     state = SendJob(
@@ -305,12 +352,12 @@ class SendJobNotifier extends Notifier<SendJob> {
           expectedFingerprint: device.info.fingerprint,
         ),
       );
+      if (!live()) return;
       offered = routes.first is QrRoute && routes.length > 1 ? (routes.first as QrRoute).payload : null;
       if (offered != null) {
         ref.read(appLogProvider)?.info('transport', 'the receiver offers its hotspot: switching to it');
       }
       _lastRoutes = routes;
-      if (_cancelled) return;
     }
 
     final PeerEndpoint endpoint;
@@ -321,6 +368,7 @@ class SendJobNotifier extends Notifier<SendJob> {
           : routes;
       endpoint = await (manager ?? TransportManager(NoTransportBackend())).establish(usable);
     } on AllTransportsFailed catch (e) {
+      if (!live()) return;
       ref.read(appLogProvider)?.warn('transport', e.toString());
       state = state.copyWith(
         status: SendStatus.failed,
@@ -328,15 +376,19 @@ class SendJobNotifier extends Notifier<SendJob> {
       );
       return;
     }
-    if (_cancelled) {
-      await manager?.release(endpoint);
+    if (!live()) {
+      // Cancelled while joining: leave what was joined, unless a newer send
+      // is already using the network.
+      if (_run == null) await manager?.release(endpoint);
       return;
     }
+    _endpoint = endpoint;
     if (offered != null && endpoint.via == TransportKind.sameLan) {
       ref.read(appLogProvider)?.warn('transport', 'could not join the hotspot: staying on the Wi-Fi');
     }
 
-    await send(
+    await _transfer(
+      run,
       DiscoveredDevice(
         DeviceInfo(
           alias: endpoint.alias,
@@ -345,6 +397,7 @@ class SendJobNotifier extends Notifier<SendJob> {
         ),
         endpoint.address,
       ),
+      files,
       pin: endpoint.pin,
       // The receiver is in pairing mode: over the Wi-Fi it wants the same
       // token as over its hotspot.
@@ -353,20 +406,34 @@ class SendJobNotifier extends Notifier<SendJob> {
     );
   }
 
+  /// Stops the running send: tells the receiver, leaves the network the send
+  /// had joined, and clears the job. The stopped send can no longer change
+  /// anything, so a new one may start at once.
   Future<void> cancel() async {
-    _cancelled = true;
     final session = _session;
+    final endpoint = _endpoint;
+    _run = null;
+    _session = null;
+    _endpoint = null;
+    state = const SendJob();
+
     final service = ref.read(localSendServiceProvider).value;
     if (session != null && service != null) {
       try {
         await service.client.cancel(session);
       } catch (_) {}
     }
-    state = const SendJob();
+    if (endpoint != null) {
+      try {
+        await ref.read(transportManagerProvider)?.release(endpoint);
+      } catch (_) {}
+    }
   }
 
   void reset() {
+    _run = null;
     _session = null;
+    _endpoint = null;
     state = const SendJob();
   }
 }

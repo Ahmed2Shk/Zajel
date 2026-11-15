@@ -157,6 +157,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get declinedByReceiver => 'The other device declined the request';
 
   @override
+  String get stopTransferTitle => 'Stop the transfer?';
+
+  @override
+  String get stopTransferBody =>
+      'The transfer is still running. Leaving now stops it.';
+
+  @override
+  String get stopTransferConfirm => 'Stop the transfer';
+
+  @override
+  String get keepTransferring => 'Keep going';
+
+  @override
   String get sendFailed => 'Sending failed';
 
   @override
