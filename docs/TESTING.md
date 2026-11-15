@@ -73,6 +73,19 @@ Both phones on the same Wi-Fi.
 - [ ] Wi-Fi off on both phones, open the app: it starts normally, Receive shows a QR code, scanning it transfers (before, the app did nothing without a network)
 - [ ] The progress bar is empty at 0% and fills as the transfer goes (before, it looked full and blue)
 
+## Audit round 1: transfer stability (A1, A2, A3, A4, A7)
+
+- [ ] A1: start a send, press Back: a dialog asks whether to stop. "Keep going" continues the transfer
+- [ ] A1: cancel a running send, then send again at once to the same phone: the second send finishes; no "failed" appears on it
+- [ ] A1: over the QR hotspot, cancel and immediately scan and send again: the second transfer is not cut off
+- [ ] A2: during a transfer, swipe the app away from the recent apps: the "transfer" notification disappears within a few seconds
+- [ ] A2: finish a transfer, close the app with Back from the home screen: no Zajel notification stays
+- [ ] A3: start a big send, then kill the sender's app (swipe it away). Open it again, wait about 10 seconds and send again: it is accepted, not "busy"
+- [ ] A3: while phone A is sending to B, phone C sends to B: C sees "the other device is busy", in Arabic
+- [ ] A4: rename a file so its name ends with a space or a dot (a file manager allows it) and send it together with other files: all arrive
+- [ ] A7: open the LocalSend app on the receiver, then open Zajel: Zajel still starts, is found by the sender and receives
+- [ ] Interop: send one file from the official LocalSend app to Zajel and one from Zajel to LocalSend
+
 ## Phase 4 — Desktop and browser
 
 - [ ] Windows ↔ Android both ways
