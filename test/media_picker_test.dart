@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -37,6 +38,9 @@ class _FakeLibrary implements MediaLibrary {
   /// item id -> the file it resolves to (missing means unreadable).
   final Map<String, ({String path, String name})> files;
 
+  /// When set, looking up a file waits for this (a slow lookup).
+  Completer<void>? gate;
+
   final accessRequests = <MediaKind>[];
   final pageRequests = <(MediaKind, int)>[];
   var settingsOpened = false;
@@ -60,7 +64,10 @@ class _FakeLibrary implements MediaLibrary {
           kind: kind,
           duration: kind == MediaKind.video ? Duration(seconds: 65 + i) : null,
           thumbnail: (px) async => Uint8List.fromList(_png),
-          resolve: () async => files['${kind.name}$i'],
+          resolve: () async {
+            await gate?.future;
+            return files['${kind.name}$i'];
+          },
         ),
     ];
   }
@@ -167,6 +174,28 @@ void main() {
     await tester.pump();
     expect(container.read(selectedFilesProvider), isEmpty);
     expect(find.byIcon(Icons.check), findsNothing);
+  });
+
+  testWidgets('while a tapped photo is being prepared it shows a spinner, and a second tap does not add it twice', (
+    tester,
+  ) async {
+    final file = await _realFile(tester, 'IMG_1.jpg', 2048);
+    final library = _FakeLibrary(images: 3, files: {'image1': file})..gate = Completer<void>();
+    final container = await _pump(tester, overrides: [mediaLibraryProvider.overrideWithValue(library)]);
+
+    await tester.tap(find.byType(Image).at(1));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(container.read(selectedFilesProvider), isEmpty);
+
+    await tester.tap(find.byType(Image).at(1)); // impatient second tap
+    await tester.pump();
+
+    library.gate!.complete();
+    await tester.pump();
+    await _settle(tester);
+    expect(container.read(selectedFilesProvider), hasLength(1));
+    expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
   testWidgets('a photo that cannot be read says so and is not selected', (tester) async {

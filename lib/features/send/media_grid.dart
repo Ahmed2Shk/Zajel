@@ -87,25 +87,34 @@ class _MediaGridState extends ConsumerState<MediaGrid> {
     }
   }
 
+  /// Ids of the tiles whose file is being looked up right now. Finding the
+  /// real file can take a moment (a big video may be copied first); meanwhile
+  /// the tile shows a spinner and further taps on it are ignored, so the file
+  /// is never added twice.
+  final _pending = <String>{};
+
   Future<void> _toggle(MediaItem item, bool selected) async {
     final notifier = ref.read(selectedFilesProvider.notifier);
     final id = mediaSendId(item);
+    if (_pending.contains(id)) return;
     if (selected) {
-      notifier.set([
-        for (final f in ref.read(selectedFilesProvider))
-          if (f.id != id) f,
-      ]);
+      notifier.remove(id);
       return;
     }
     final messenger = ScaffoldMessenger.of(context);
     final unreadable = context.l10n.mediaUnreadable;
-    final resolved = await item.resolve();
-    if (resolved == null) {
-      messenger.showSnackBar(SnackBar(content: Text(unreadable)));
-      return;
+    setState(() => _pending.add(id));
+    try {
+      final resolved = await item.resolve();
+      if (resolved == null) {
+        messenger.showSnackBar(SnackBar(content: Text(unreadable)));
+        return;
+      }
+      notifier.add(await SendFile.fromPath(resolved.path, id: id, name: resolved.name));
+    } finally {
+      _pending.remove(id);
+      if (mounted) setState(() {});
     }
-    final file = await SendFile.fromPath(resolved.path, id: id, name: resolved.name);
-    notifier.set([...ref.read(selectedFilesProvider), file]);
   }
 
   @override
@@ -164,6 +173,7 @@ class _MediaGridState extends ConsumerState<MediaGrid> {
                 key: ValueKey(item.id),
                 item: item,
                 selected: selected,
+                pending: _pending.contains(mediaSendId(item)),
                 onTap: () => _toggle(item, selected),
               );
             },
@@ -175,10 +185,19 @@ class _MediaGridState extends ConsumerState<MediaGrid> {
 }
 
 class _Tile extends StatefulWidget {
-  const _Tile({required this.item, required this.selected, required this.onTap, super.key});
+  const _Tile({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+    this.pending = false,
+    super.key,
+  });
 
   final MediaItem item;
   final bool selected;
+
+  /// The file behind this tile is being prepared after a tap.
+  final bool pending;
   final VoidCallback onTap;
 
   @override
@@ -225,6 +244,13 @@ class _TileState extends State<_Tile> {
               ),
               if (widget.selected)
                 ColoredBox(color: scheme.primary.withValues(alpha: 0.25)),
+              if (widget.pending)
+                ColoredBox(
+                  color: scheme.surface.withValues(alpha: 0.6),
+                  child: const Center(
+                    child: SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 3)),
+                  ),
+                ),
               if (item.duration != null)
                 PositionedDirectional(
                   start: 6,

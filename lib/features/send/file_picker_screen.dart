@@ -34,21 +34,24 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
   // appear for the tabs the user actually opens.
   final _opened = <_PickerTab>{_PickerTab.photos};
 
-  Future<void> _addPaths(Iterable<({String path, String name})> picked) async {
+  /// Adds picked paths to the selection. [source] goes into the id ("file",
+  /// "app"), so each tab can list what was picked in it.
+  Future<void> _addPaths(Iterable<({String path, String name})> picked, {required String source}) async {
     final notifier = ref.read(selectedFilesProvider.notifier);
-    final files = [...ref.read(selectedFilesProvider)];
-    final known = files.map((f) => f.file.path).toSet();
+    final stamp = DateTime.now().microsecondsSinceEpoch;
+    final files = <SendFile>[];
     for (final item in picked) {
-      if (!known.add(item.path)) continue;
       files.add(
-        await SendFile.fromPath(
-          item.path,
-          id: '${DateTime.now().microsecondsSinceEpoch}-${files.length}',
-          name: item.name,
-        ),
+        await SendFile.fromPath(item.path, id: '$source-$stamp-${files.length}', name: item.name),
       );
     }
-    notifier.set(files);
+    // The system picker hands back a fresh copy each time, so the same file
+    // picked twice has two paths: it is the same file if name and size match.
+    final current = ref.read(selectedFilesProvider);
+    notifier.addAll([
+      for (final file in files)
+        if (!current.any((f) => f.id.startsWith('$source-') && f.name == file.name && f.size == file.size)) file,
+    ]);
   }
 
   Future<void> _pickAny() async {
@@ -56,18 +59,15 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
     await _addPaths([
       for (final f in picked)
         if (f.path != null) (path: f.path!, name: f.name),
-    ]);
+    ], source: 'file');
   }
 
   void _toggleApp(NativeAppInfo app, bool selected) {
     final notifier = ref.read(selectedFilesProvider.notifier);
     if (selected) {
-      _addPaths([(path: app.apkPath, name: '${app.name}.apk')]);
+      _addPaths([(path: app.apkPath, name: '${app.name}.apk')], source: 'app');
     } else {
-      notifier.set([
-        for (final f in ref.read(selectedFilesProvider))
-          if (f.file.path != app.apkPath) f,
-      ]);
+      notifier.removeWhere((f) => f.file.path == app.apkPath);
     }
   }
 
@@ -185,17 +185,22 @@ class _FilesTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final files = ref.watch(selectedFilesProvider);
+    // Only what was picked in this tab: photos, videos and apps show their
+    // own selection, and the send bar's review lists everything.
+    final files = [
+      for (final f in ref.watch(selectedFilesProvider))
+        if (f.id.startsWith('file-')) f,
+    ];
     return ListView(
       children: [
         OutlinedButton.icon(icon: const Icon(Icons.add), label: Text(l10n.chooseFiles), onPressed: onPick),
         const SizedBox(height: 10),
         Text(l10n.filesAndroidNote, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 16),
-        for (var i = 0; i < files.length; i++) ...[
+        for (final file in files) ...[
           SelectedFileTile(
-            file: files[i],
-            onRemove: () => ref.read(selectedFilesProvider.notifier).set([...files]..removeAt(i)),
+            file: file,
+            onRemove: () => ref.read(selectedFilesProvider.notifier).remove(file.id),
           ),
           const SizedBox(height: 8),
         ],

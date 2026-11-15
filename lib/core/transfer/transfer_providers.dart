@@ -110,6 +110,35 @@ class SelectedFilesNotifier extends Notifier<List<SendFile>> {
 
   void set(List<SendFile> files) => state = files;
 
+  /// Adds the files that are not selected yet. A file counts as selected when
+  /// its id or its path is already there, so a double tap or a late answer
+  /// from a slow lookup never adds it twice. Works on the list as it is now,
+  /// not on a copy read before an await.
+  void addAll(Iterable<SendFile> files) {
+    final ids = {for (final f in state) f.id};
+    final paths = {for (final f in state) f.file.path};
+    final next = [...state];
+    for (final file in files) {
+      if (ids.contains(file.id) || paths.contains(file.file.path)) continue;
+      ids.add(file.id);
+      paths.add(file.file.path);
+      next.add(file);
+    }
+    if (next.length != state.length) state = next;
+  }
+
+  void add(SendFile file) => addAll([file]);
+
+  void removeWhere(bool Function(SendFile file) test) {
+    final next = [
+      for (final f in state)
+        if (!test(f)) f,
+    ];
+    if (next.length != state.length) state = next;
+  }
+
+  void remove(String id) => removeWhere((f) => f.id == id);
+
   void clear() => state = const [];
 }
 

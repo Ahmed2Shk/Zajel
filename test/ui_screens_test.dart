@@ -190,18 +190,22 @@ void main() {
     });
 
     testWidgets('a selection shows its files and enables sending', (tester) async {
-      final file = await _makeFile(tester, 'holiday.zip', 3 * 1024 * 1024);
+      final made = await _makeFile(tester, 'holiday.zip', 3 * 1024 * 1024);
+      // As the Files tab adds it; a photo is selected too.
+      final file = SendFile(id: 'file-1-0', file: made.file, size: made.size, name: made.name);
+      final photo = SendFile(id: 'media-7', file: File('${made.file.path}.jpg'), size: 10, name: 'beach.jpg');
 
       final container = await _pump(tester);
-      container.read(selectedFilesProvider.notifier).set([file]);
+      container.read(selectedFilesProvider.notifier).set([file, photo]);
       await _go(tester, container, AppRoutes.filePicker);
-      // The Files tab lists everything selected, from any tab.
+      // The Files tab lists what was picked in it, not the photo.
       await tester.tap(find.text('الملفات'));
       await tester.pump();
 
       expect(find.text('holiday.zip'), findsOneWidget);
+      expect(find.text('beach.jpg'), findsNothing);
+      expect(find.text('إرسال (2)'), findsOneWidget);
       expect(find.textContaining('3.0 MB'), findsWidgets);
-      expect(find.text('إرسال (1)'), findsOneWidget);
       final send = tester.widget<FilledButton>(find.byType(FilledButton));
       expect(send.onPressed, isNotNull);
     });
