@@ -175,6 +175,18 @@ class LocalSendService {
       }
       if (event is SessionEnded) {
         _log?.info('receive', event.cancelled ? 'session cancelled' : 'session finished');
+        final snapshot = receive.current;
+        if (snapshot != null && snapshot.sessionId == event.sessionId) {
+          // The real speed of this transfer, for comparing one run with another.
+          final seconds = DateTime.now().difference(snapshot.startedAt).inMilliseconds / 1000;
+          final megabytes = snapshot.receivedBytes / (1024 * 1024);
+          _log?.info(
+            'receive',
+            'received ${snapshot.receivedBytes} of ${snapshot.totalBytes} bytes in '
+                '${seconds.toStringAsFixed(1)} s, '
+                '${seconds <= 0 ? '-' : (megabytes / seconds).toStringAsFixed(1)} MB/s',
+          );
+        }
         // Files may still be copying into the gallery: keep the service (and
         // the screen) alive until they are saved.
         unawaited(receive.whenSaved().then((_) => endTransfer()));

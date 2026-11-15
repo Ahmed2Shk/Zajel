@@ -11,6 +11,7 @@ import '../discovery/multicast_discovery.dart';
 import '../logging/log_providers.dart';
 import '../platform/native_data_bridge.dart';
 import '../platform/platform_api.g.dart';
+import '../platform/platform_providers.dart';
 import '../security/device_identity.dart';
 import '../transport/pairing_payload.dart';
 import '../transport/transport_manager.dart';
@@ -242,6 +243,7 @@ class SendJobNotifier extends Notifier<SendJob> {
       }
       _session = session;
       state = state.copyWith(status: SendStatus.sending);
+      unawaited(_logLink(endpoint));
 
       final stopwatch = Stopwatch()..start();
       final sent = <String, int>{};
@@ -280,6 +282,13 @@ class SendJobNotifier extends Notifier<SendJob> {
         }
       }
       if (!live()) return;
+      final seconds = stopwatch.elapsedMilliseconds / 1000;
+      final bytes = files.fold(0, (sum, f) => sum + f.size);
+      ref.read(appLogProvider)?.info(
+        'send',
+        'finished: $bytes bytes in ${seconds.toStringAsFixed(1)} s, '
+            '${seconds == 0 ? '-' : (bytes / (1024 * 1024) / seconds).toStringAsFixed(1)} MB/s',
+      );
       state = state.copyWith(
         status: SendStatus.done,
         sentPerFile: {for (final f in files) f.id: f.size},
@@ -321,6 +330,28 @@ class SendJobNotifier extends Notifier<SendJob> {
           await ref.read(transportManagerProvider)?.release(endpoint);
         }
       }
+    }
+  }
+
+  /// Notes in the log which route this send uses and what this phone's Wi-Fi
+  /// link looks like (band, link speed, signal). When one transfer is fast and
+  /// the next is slow, this tells a 2.4 GHz hotspot or a weak signal from a
+  /// problem in the app.
+  Future<void> _logLink(PeerEndpoint? endpoint) async {
+    final log = ref.read(appLogProvider);
+    if (log == null) return;
+    final route = (endpoint?.via ?? TransportKind.sameLan).name;
+    try {
+      final wifi = await ref.read(platformApiProvider).getWifiInfo();
+      log.info(
+        'send',
+        wifi == null
+            ? 'route $route, no Wi-Fi details'
+            : 'route $route, Wi-Fi ${wifi.frequencyMhz} MHz, link ${wifi.linkSpeedMbps} Mbps, '
+                  'signal ${wifi.rssiDbm} dBm',
+      );
+    } catch (_) {
+      log.info('send', 'route $route');
     }
   }
 
