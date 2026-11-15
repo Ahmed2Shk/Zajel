@@ -170,6 +170,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keepTransferring => 'Keep going';
 
   @override
+  String get receiverBusy =>
+      'The other device is busy with another transfer. Wait until it ends, then try again.';
+
+  @override
   String get sendFailed => 'Sending failed';
 
   @override

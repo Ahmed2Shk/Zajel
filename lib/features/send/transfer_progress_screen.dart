@@ -245,6 +245,8 @@ class _TransferProgressScreenState
                                   ? l10n.deviceGone
                                   : job.error == 'declined'
                                   ? l10n.declinedByReceiver
+                                  : job.error == 'busy'
+                                  ? l10n.receiverBusy
                                   : transportFailureOf(job.error) != null
                                   ? transportMessage(
                                       l10n,

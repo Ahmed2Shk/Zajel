@@ -51,6 +51,7 @@
   "stopTransferBody": "The transfer is still running. Leaving now stops it.",
   "stopTransferConfirm": "Stop the transfer",
   "keepTransferring": "Keep going",
+  "receiverBusy": "The other device is busy with another transfer. Wait until it ends, then try again.",
   "sendFailed": "Sending failed",
   "enterPin": "Enter PIN",
   "pinRequiredHint": "The other device requires a PIN",

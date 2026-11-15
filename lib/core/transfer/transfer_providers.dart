@@ -284,7 +284,11 @@ class SendJobNotifier extends Notifier<SendJob> {
       ref.read(appLogProvider)?.error('send', e);
       state = state.copyWith(
         status: e.pinRequired ? SendStatus.needsPin : SendStatus.failed,
-        error: e.declined ? 'declined' : e.message,
+        error: e.declined
+            ? 'declined'
+            : e.busy
+            ? 'busy'
+            : e.message,
       );
     } on SocketException catch (e, stack) {
       // Connection refused or timed out: the device is gone or unreachable.

@@ -404,6 +404,12 @@ abstract class AppLocalizations {
   /// **'متابعة النقل'**
   String get keepTransferring;
 
+  /// No description provided for @receiverBusy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجهاز الآخر مشغول بنقل آخر الآن. انتظر حتى ينتهي ثم حاول من جديد.'**
+  String get receiverBusy;
+
   /// No description provided for @sendFailed.
   ///
   /// In ar, this message translates to:

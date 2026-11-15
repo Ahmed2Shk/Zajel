@@ -169,6 +169,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get keepTransferring => 'متابعة النقل';
 
   @override
+  String get receiverBusy =>
+      'الجهاز الآخر مشغول بنقل آخر الآن. انتظر حتى ينتهي ثم حاول من جديد.';
+
+  @override
   String get sendFailed => 'فشل الإرسال';
 
   @override

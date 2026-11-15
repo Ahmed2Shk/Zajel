@@ -179,6 +179,7 @@ class ReceiveServer {
     this.enableChunking = true,
     this.sessionIdleTimeout = const Duration(minutes: 2),
     this.stallTimeout = const Duration(seconds: 30),
+    this.takeoverAfter = const Duration(seconds: 10),
     this.nativeData,
     this.onError,
     this.onNote,
@@ -215,7 +216,12 @@ class ReceiveServer {
   /// How long a whole-file upload may go without data before a resume of the
   /// same file stops waiting for it (its sender is taken to have vanished).
   final Duration stallTimeout;
+
+  /// A sender whose own earlier session has been silent this long may start a
+  /// new one in its place, instead of being told "busy" until the idle timeout.
+  final Duration takeoverAfter;
   Timer? _idleTimer;
+  DateTime _lastActivity = DateTime.now();
 
   static const maxPinAttempts = 5;
   static const pinLockout = Duration(seconds: 60);
@@ -353,7 +359,7 @@ class ReceiveServer {
       sanitizeReceivedFileName(file.fileName);
       if (file.size < 0) throw const FormatException('negative size');
     }
-    if (_session != null) throw const _HttpError(409, 'Blocked by another session');
+    await _refuseIfBusy(body.info, ip);
 
     final transfer = IncomingTransfer(
       sender: body.info,
@@ -365,7 +371,7 @@ class ReceiveServer {
       throw const _HttpError(403, 'Rejected');
     }
     // The dialog is async; another sender may have claimed the slot meanwhile.
-    if (_session != null) throw const _HttpError(409, 'Blocked by another session');
+    await _refuseIfBusy(body.info, ip);
 
     final session = _Session(
       _randomToken(),
@@ -439,6 +445,26 @@ class ReceiveServer {
       await _abortSession(cancelled: true);
       rethrow;
     }
+  }
+
+  /// One session at a time. A second sender is told the receiver is busy (409).
+  /// The same sender coming back is different: its earlier transfer broke
+  /// without a cancel (the app was closed, the network dropped) and it is now
+  /// trying again. If that old session has been silent for [takeoverAfter], it
+  /// is dropped and the new request goes ahead, instead of failing for the two
+  /// minutes of the idle timeout.
+  Future<void> _refuseIfBusy(DeviceInfo sender, InternetAddress ip) async {
+    final current = _session;
+    if (current == null) return;
+    final sameSender =
+        current.transfer.senderAddress == ip ||
+        (sender.fingerprint.isNotEmpty && sender.fingerprint == current.transfer.sender.fingerprint);
+    if (sameSender && DateTime.now().difference(_lastActivity) >= takeoverAfter) {
+      onNote?.call('session ended: its sender started a new one');
+      await _abortSession(cancelled: true);
+      return;
+    }
+    throw const _HttpError(409, 'Blocked by another session');
   }
 
   /// Checks `sessionId`, `fileId` and `token` against the active session and
@@ -777,6 +803,7 @@ class ReceiveServer {
 
   /// Restarts the idle clock; called on every sign of life from the sender.
   void _touch() {
+    _lastActivity = DateTime.now();
     _idleTimer?.cancel();
     if (_session == null) return;
     _idleTimer = Timer(sessionIdleTimeout, () {

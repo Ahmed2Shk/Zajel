@@ -78,6 +78,7 @@
   "stopTransferBody": "النقل ما زال جارياً. إذا خرجت الآن سيتوقف.",
   "stopTransferConfirm": "إيقاف النقل",
   "keepTransferring": "متابعة النقل",
+  "receiverBusy": "الجهاز الآخر مشغول بنقل آخر الآن. انتظر حتى ينتهي ثم حاول من جديد.",
   "sendFailed": "فشل الإرسال",
   "enterPin": "أدخل رمز PIN",
   "pinRequiredHint": "الجهاز الآخر يطلب رمز PIN",
