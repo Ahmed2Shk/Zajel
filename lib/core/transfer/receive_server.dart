@@ -355,16 +355,30 @@ class ReceiveServer {
       await _empty(request, 204);
       return;
     }
-    for (final file in body.files.values) {
-      sanitizeReceivedFileName(file.fileName);
-      if (file.size < 0) throw const FormatException('negative size');
+    // A file whose name is not safe is left out (it gets no token, as if the
+    // user had not accepted it); the rest of the batch goes ahead. Only when
+    // nothing is left is the whole request refused.
+    final offered = <String, FileMetadata>{};
+    UnsafeFileNameException? unsafe;
+    for (final entry in body.files.entries) {
+      if (entry.value.size < 0) throw const FormatException('negative size');
+      try {
+        sanitizeReceivedFileName(entry.value.fileName);
+        offered[entry.key] = entry.value;
+      } on UnsafeFileNameException catch (e) {
+        unsafe = e;
+      }
+    }
+    if (offered.isEmpty) throw unsafe!;
+    if (offered.length < body.files.length) {
+      onNote?.call('${body.files.length - offered.length} file(s) left out: unsafe name');
     }
     await _refuseIfBusy(body.info, ip);
 
     final transfer = IncomingTransfer(
       sender: body.info,
       senderAddress: ip,
-      files: body.files,
+      files: offered,
     );
     final accepted = await onIncoming(transfer);
     if (accepted == null || accepted.isEmpty) {
@@ -378,8 +392,8 @@ class ReceiveServer {
       transfer,
       {
         for (final id in accepted)
-          if (body.files.containsKey(id))
-            id: _AcceptedFile(body.files[id]!, _randomToken()),
+          if (offered.containsKey(id))
+            id: _AcceptedFile(offered[id]!, _randomToken()),
       },
       _randomToken(),
     );

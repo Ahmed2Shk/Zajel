@@ -9,6 +9,7 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 
 import '../security/device_identity.dart';
+import '../security/file_name_sanitizer.dart';
 import 'protocol_models.dart';
 import 'range_set.dart';
 import 'tar_stream.dart';
@@ -30,7 +31,7 @@ class SendFile {
 
   FileMetadata toMetadata() => FileMetadata(
     id: id,
-    fileName: name,
+    fileName: normalizeSentFileName(name),
     size: size,
     fileType: lookupMimeType(file.path) ?? 'application/octet-stream',
   );

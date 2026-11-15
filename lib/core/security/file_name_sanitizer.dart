@@ -39,3 +39,24 @@ String sanitizeReceivedFileName(String name) {
   }
   return segments.join('/');
 }
+
+/// Makes a local file name acceptable to [sanitizeReceivedFileName] before it
+/// is offered to a receiver, so one oddly named file ("notes .txt", "draft.")
+/// cannot fail a whole batch. Used by the sender on its own files only: what
+/// arrives from the network is never rewritten, it is checked.
+String normalizeSentFileName(String name) {
+  final cleaned = name
+      .replaceAll(_controlChars, '_')
+      .replaceAll(r'\', '/')
+      .replaceFirst(_windowsDrive, '_');
+  final segments = <String>[];
+  for (final raw in cleaned.split('/')) {
+    var segment = raw.trim();
+    while (segment.endsWith('.') || segment.endsWith(' ')) {
+      segment = segment.substring(0, segment.length - 1);
+    }
+    if (segment.isEmpty || segment == '..') continue;
+    segments.add(segment);
+  }
+  return segments.isEmpty ? 'file' : segments.join('/');
+}
