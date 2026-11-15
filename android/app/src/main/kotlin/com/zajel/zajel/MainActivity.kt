@@ -92,6 +92,10 @@ class MainActivity : FlutterActivity() {
             it.disconnectDirect()
         }
         dataServer?.stop()
+        // The transfer lives in this activity's Flutter engine: once it is gone
+        // nothing is being transferred, so the service must not keep its
+        // notification, Wi-Fi lock and wake lock.
+        stopService(Intent(this, TransferService::class.java))
         super.onDestroy()
     }
 

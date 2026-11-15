@@ -52,6 +52,16 @@ class TransferService : Service() {
         stopSelf(startId)
     }
 
+    /**
+     * The app was swiped away from the recent apps. The transfer died with the
+     * activity (onDestroy is not always called then), so stop here too.
+     */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        releaseLocks()
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         releaseLocks()
         super.onDestroy()
