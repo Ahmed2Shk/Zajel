@@ -176,6 +176,40 @@ void main() {
     });
   });
 
+  group('hosting with Wi-Fi off', () {
+    TransportManager hosting() => TransportManager(
+      backend,
+      addressPoll: const Duration(milliseconds: 5),
+      listAddresses: () async => [
+        if (backend.calls.contains('startHotspot')) InternetAddress('192.168.43.1'),
+      ],
+    );
+
+    test('a phone that can host without Wi-Fi just does', () async {
+      backend
+        ..wifi = false
+        ..hotspotWithoutWifi = true;
+      final hotspot = await hosting().startHotspot();
+      expect(hotspot.address.address, '192.168.43.1');
+    });
+
+    test('a phone that cannot is asked to switch Wi-Fi on', () async {
+      backend.wifi = false;
+      await expectLater(
+        hosting().startHotspot(),
+        throwsA(isA<TransportException>().having((e) => e.reason, 'reason', TransportFailure.wifiOff)),
+      );
+    });
+
+    test('joining still needs Wi-Fi on', () async {
+      backend.wifi = false;
+      await expectLater(
+        hosting().establish([QrRoute(_payload())]),
+        throwsA(isA<AllTransportsFailed>().having((e) => e.failures.single.reason, 'reason', TransportFailure.wifiOff)),
+      );
+    });
+  });
+
   group('QR pairing', () {
     test('carries the token and PIN to the sender', () async {
       final endpoint = await manager.establish([QrRoute(_payload())]);

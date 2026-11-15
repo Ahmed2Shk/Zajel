@@ -6,6 +6,9 @@ class FakeTransportBackend implements TransportBackend {
   bool permissions = true;
   bool location = true;
   bool wifi = true;
+
+  /// Whether this phone can host a hotspot while Wi-Fi is switched off.
+  bool hotspotWithoutWifi = false;
   TransportException? joinError;
   TransportException? directError;
   TransportException? hotspotError;
@@ -26,6 +29,10 @@ class FakeTransportBackend implements TransportBackend {
 
   @override
   Future<NetworkCredentials> startHotspot() async {
+    if (!wifi && !hotspotWithoutWifi) {
+      // Nothing started, so nothing is recorded as started.
+      throw const TransportException(TransportKind.hotspotQr, TransportFailure.failed);
+    }
     calls.add('startHotspot');
     if (hotspotError != null) throw hotspotError!;
     return const NetworkCredentials(ssid: 'AndroidShare_1', passphrase: 'password123');

@@ -402,14 +402,14 @@ class TransportManager {
 
   /// Permissions, location and Wi-Fi: the three things that must be right
   /// before any router-free transport can start, each with its own error.
-  Future<void> _ensureReady(TransportKind kind) async {
+  Future<void> _ensureReady(TransportKind kind, {bool needsWifiOn = true}) async {
     if (!await backend.requestPermissions()) {
       throw TransportException(kind, TransportFailure.permissionDenied);
     }
     if (!await backend.isLocationEnabled()) {
       throw TransportException(kind, TransportFailure.locationOff);
     }
-    if (!await backend.isWifiEnabled()) {
+    if (needsWifiOn && !await backend.isWifiEnabled()) {
       throw TransportException(kind, TransportFailure.wifiOff);
     }
   }
@@ -443,10 +443,20 @@ class TransportManager {
 
   /// Starts a hotspot for a QR pairing and finds this device's address on it.
   Future<HostedHotspot> startHotspot() async {
-    await _ensureReady(TransportKind.hotspotQr);
+    // Hosting is tried with Wi-Fi off too (most phones allow it). Only when it
+    // does not start and Wi-Fi is off is the user asked to switch Wi-Fi on.
+    await _ensureReady(TransportKind.hotspotQr, needsWifiOn: false);
     final before = (await _listAddresses()).map((a) => a.address).toSet();
     try {
-      final credentials = await backend.startHotspot();
+      final NetworkCredentials credentials;
+      try {
+        credentials = await backend.startHotspot();
+      } on TransportException catch (e) {
+        if (e.reason == TransportFailure.failed && !await backend.isWifiEnabled()) {
+          throw const TransportException(TransportKind.hotspotQr, TransportFailure.wifiOff);
+        }
+        rethrow;
+      }
       try {
         return HostedHotspot(
           credentials: credentials,

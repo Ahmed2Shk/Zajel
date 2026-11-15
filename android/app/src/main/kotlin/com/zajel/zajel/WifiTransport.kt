@@ -113,7 +113,10 @@ class WifiTransport(
 
     @SuppressLint("MissingPermission")
     override fun startHotspot(callback: (Result<NativeNetworkInfo>) -> Unit) {
-        precondition()?.let { return callback(Result.failure(it)) }
+        // A hotspot is its own radio mode: on most phones it starts with Wi-Fi
+        // switched off. So it is tried first, and "turn Wi-Fi on" is only said
+        // when it did not start and Wi-Fi is off.
+        precondition(needsWifiOn = false)?.let { return callback(Result.failure(it)) }
         stopHotspot()
         try {
             wifi.startLocalOnlyHotspot(
@@ -137,9 +140,10 @@ class WifiTransport(
                     }
 
                     override fun onFailed(reason: Int) {
-                        val code = when (reason) {
-                            ERROR_INCOMPATIBLE_MODE -> "busy" // e.g. the phone's own hotspot is on
-                            ERROR_TETHERING_DISALLOWED -> "unsupported"
+                        val code = when {
+                            reason == ERROR_INCOMPATIBLE_MODE -> "busy" // e.g. the phone's own hotspot is on
+                            reason == ERROR_TETHERING_DISALLOWED -> "unsupported"
+                            !isWifiEnabled() -> "wifi_off"
                             else -> "failed"
                         }
                         note("hotspot: failed, reason $reason ($code)")

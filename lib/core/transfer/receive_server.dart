@@ -263,7 +263,9 @@ class ReceiveServer {
       shared: true,
     );
     _server = server;
-    server.listen(_handle);
+    // A connection that breaks during the TLS handshake arrives here as an
+    // error. It concerns that one connection only.
+    server.listen(_handle, onError: (Object _) {});
 
     final bridge = nativeData;
     if (bridge != null && enableChunking) {

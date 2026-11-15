@@ -51,12 +51,17 @@ class MulticastDiscovery {
     socket.multicastHops = 1;
     _socket = socket;
     await _joinGroup(socket);
-    socket.listen((event) {
-      if (event == RawSocketEvent.read) {
-        final datagram = socket.receive();
-        if (datagram != null) _onDatagram(datagram);
-      }
-    });
+    socket.listen(
+      (event) {
+        if (event == RawSocketEvent.read) {
+          final datagram = socket.receive();
+          if (datagram != null) _onDatagram(datagram);
+        }
+      },
+      // A failed send ("network is unreachable" while this app is bound to a
+      // hotspot, or with Wi-Fi off) is also reported here. It is not a fault.
+      onError: (Object _) {},
+    );
     for (final delay in const [100, 500, 2000]) {
       _timers.add(Timer(Duration(milliseconds: delay), announce));
     }

@@ -44,6 +44,16 @@ are real transfers, not the speed test. Phones: one Android 12 and one Android 1
 | 2026-11-13 | A12 -> A13 | hotspot | QR hotspot, native data path | 1.2 GB video | ~32 | first 168 MB in 5.2 s, then cancelled |
 | 2026-11-11 | A13 -> A12 | hotspot, band unknown | QR hotspot hosted by the A12 phone | 1.1 GB video | ~7 | 151 MB in 20 s, then cancelled |
 | 2026-11-13 | A12 -> A13 | 5 GHz, link 585 / 195 Mbps | shared router | 1.3 GB video | 0.2-0.3 | on screen; no chunk landed in 27 s |
+| 2026-11-13 | A13 -> A12 | hotspot, band unknown | QR hotspot hosted by the A12 phone | 841 MB video | ~6.3 | 882 MB in 140 s, complete |
+| 2026-11-15 | A12 -> A13 | hotspot on 2462 MHz (2.4 GHz), link 96 Mbps, signal -16 dBm | QR hotspot hosted by the A13 phone | 457 MB video | ~1.3 | 68 MB in 49 s, then cancelled; the host was on a different, 192.168.0.x Wi-Fi that day |
+
+**The hotspot's band decides the speed, and the app cannot choose it.** The same two phones, the same
+host, gave ~30 MB/s on 2026-11-05 and 2026-11-13 and 1.3 MB/s on 2026-11-15. The sender's log line for
+the slow run says the hotspot was on 2.4 GHz with a 96 Mbps link. On the fast days the host was connected
+to a 5 GHz Wi-Fi. The likely rule (not verified by a controlled test): a LocalOnlyHotspot shares the
+radio with the phone's own Wi-Fi connection, so it lands on that connection's channel; on a 2.4 GHz
+Wi-Fi, or with no connection, it is a 2.4 GHz hotspot. A Wi-Fi Direct group can ask for 5 GHz
+(the A13 phone created one on 5180 MHz on 2026-11-13), which is the reason to make that transport work.
 
 The Phase 2 target (20-40 MB/s) is met on the direct link when the Android 13 phone hosts the hotspot.
 With the Android 12 phone hosting it was about 7 MB/s; the likely reason is that its hotspot runs on
