@@ -131,6 +131,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get preparingFiles => 'Preparing the files…';
+
+  @override
   String get chooseFiles => 'Choose files';
 
   @override

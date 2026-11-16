@@ -332,6 +332,12 @@ abstract class AppLocalizations {
   /// **'جاهز للاستقبال باسم {name}'**
   String readyToReceive(String name);
 
+  /// No description provided for @preparingFiles.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري تحضير الملفات…'**
+  String get preparingFiles;
+
   /// No description provided for @chooseFiles.
   ///
   /// In ar, this message translates to:

@@ -55,12 +55,23 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
     ]);
   }
 
+  /// The system picker copies each chosen file into the app's cache before it
+  /// answers, which takes a while for big files. Until it is done the Files
+  /// tab says so, instead of looking as if nothing was chosen.
+  bool _preparing = false;
+
   Future<void> _pickAny() async {
-    final picked = await FilePicker.pickFiles();
-    await _addPaths([
-      for (final f in picked)
-        if (f.path != null) (path: f.path!, name: f.name),
-    ], source: 'file');
+    if (_preparing) return;
+    setState(() => _preparing = true);
+    try {
+      final picked = await FilePicker.pickFiles();
+      await _addPaths([
+        for (final f in picked)
+          if (f.path != null) (path: f.path!, name: f.name),
+      ], source: 'file');
+    } finally {
+      if (mounted) setState(() => _preparing = false);
+    }
   }
 
   void _toggleApp(NativeAppInfo app, bool selected) {
@@ -106,7 +117,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
         _PickerTab.photos => const MediaGrid(kind: MediaKind.image),
         _PickerTab.videos => const MediaGrid(kind: MediaKind.video),
         _PickerTab.apps => _AppsList(onToggle: _toggleApp),
-        _PickerTab.files => _FilesTab(onPick: _pickAny),
+        _PickerTab.files => _FilesTab(onPick: _pickAny, preparing: _preparing),
       };
     }
 
@@ -191,9 +202,12 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
 }
 
 class _FilesTab extends ConsumerWidget {
-  const _FilesTab({required this.onPick});
+  const _FilesTab({required this.onPick, this.preparing = false});
 
   final VoidCallback onPick;
+
+  /// Files are being chosen or copied by the system picker.
+  final bool preparing;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -206,7 +220,13 @@ class _FilesTab extends ConsumerWidget {
     ];
     return ListView(
       children: [
-        OutlinedButton.icon(icon: const Icon(Icons.add), label: Text(l10n.chooseFiles), onPressed: onPick),
+        OutlinedButton.icon(
+          icon: preparing
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.add),
+          label: Text(preparing ? l10n.preparingFiles : l10n.chooseFiles),
+          onPressed: preparing ? null : onPick,
+        ),
         const SizedBox(height: 10),
         Text(l10n.filesAndroidNote, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 16),

@@ -86,6 +86,20 @@ Both phones on the same Wi-Fi.
 - [ ] A7: open the LocalSend app on the receiver, then open Zajel: Zajel still starts, is found by the sender and receives
 - [ ] Interop: send one file from the official LocalSend app to Zajel and one from Zajel to LocalSend
 
+## Audit round 2: choosing files (C1, C2, C3, C4, C5, C6)
+
+- [ ] C1: start a send and cancel it, or let it fail (turn the receiver's Wi-Fi off). Press Send on the home screen: the same files are still selected
+- [ ] C1: on the failed screen, "Try again" sends to the same phone; "Choose another device" opens the radar; Back from the radar goes to the home screen
+- [ ] C1: after a send that succeeded, the next send starts with nothing selected
+- [ ] C3: tap a big video in the Videos tab: a spinner shows on its tile until it is selected. Tap it twice quickly: it is counted once
+- [ ] C4/C6: pick photos, an app and a file. Each tab shows its own; the send bar counts all; "review" lists all
+- [ ] C2: in the Files tab choose a file of 1 GB or more: the button says "Preparing the files…" until it appears in the list. (The wait itself is not gone: the system picker still copies the file. Photos and Videos tabs do not have it.)
+- [ ] C2: choose the same file twice: it is listed once
+- [ ] C5: select two photos, open the Files tab's picker, switch to another heavy app until Zajel is closed by Android, come back within ten minutes: the two photos are still selected
+- [ ] C6: with nothing selected, scan a receiver's QR code, pick a file, press Send: the transfer starts at once (no radar)
+- [ ] C6: after "Done", press Back: the home screen, not the launcher. "Send more", then Back: the home screen
+- [ ] Hotspot with Wi-Fi off: switch Wi-Fi off, press Receive: a QR code appears (if this phone cannot do it, the "turn Wi-Fi on" message appears instead)
+
 ## Phase 4 — Desktop and browser
 
 - [ ] Windows ↔ Android both ways

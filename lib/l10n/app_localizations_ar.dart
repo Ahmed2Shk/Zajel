@@ -131,6 +131,9 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get preparingFiles => 'جاري تحضير الملفات…';
+
+  @override
   String get chooseFiles => 'اختر ملفات';
 
   @override

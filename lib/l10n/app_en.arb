@@ -39,6 +39,7 @@
   "noDevicesFound": "No devices found. Make sure the other device is on the same Wi-Fi with Zajel or LocalSend open.",
   "searchAgain": "Search again",
   "readyToReceive": "Ready to receive as {name}",
+  "preparingFiles": "Preparing the files…",
   "chooseFiles": "Choose files",
   "noFilesSelected": "No files selected yet",
   "pickFilesFirst": "Choose files first",

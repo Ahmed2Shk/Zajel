@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/settings/app_settings.dart';
 import '../../l10n/app_localizations.dart';
@@ -105,8 +108,97 @@ final incomingTransferProvider = StreamProvider<PendingIncoming>((ref) async* {
 });
 
 class SelectedFilesNotifier extends Notifier<List<SendFile>> {
+  static const _prefsKey = 'pendingSelection';
+
+  /// A saved selection older than this is not brought back: it is there to
+  /// survive Android closing the app while the system picker is open, not to
+  /// greet the user with last week's files.
+  static const restoreWithin = Duration(minutes: 10);
+
+  SharedPreferences? _prefs;
+
   @override
-  List<SendFile> build() => const [];
+  List<SendFile> build() {
+    try {
+      _prefs = ref.read(sharedPreferencesProvider);
+    } catch (_) {
+      _prefs = null; // no storage here (some tests): the selection is memory only
+    }
+    // After build: the state cannot be read while it is being created.
+    unawaited(Future.microtask(_restore));
+    return const [];
+  }
+
+  @override
+  set state(List<SendFile> files) {
+    super.state = files;
+    _save(files);
+  }
+
+  void _save(List<SendFile> files) {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    if (files.isEmpty) {
+      unawaited(prefs.remove(_prefsKey));
+      return;
+    }
+    unawaited(
+      prefs.setString(
+        _prefsKey,
+        jsonEncode({
+          'at': DateTime.now().millisecondsSinceEpoch,
+          'files': [
+            for (final f in files) {'id': f.id, 'path': f.file.path, 'name': f.name},
+          ],
+        }),
+      ),
+    );
+  }
+
+  /// Brings back a selection saved a moment ago, leaving out files that are
+  /// gone. With nothing to bring back, the copies the system picker left in
+  /// the cache are removed: nothing refers to them any more.
+  Future<void> _restore() async {
+    if (!ref.mounted) return;
+    final restored = <SendFile>[];
+    try {
+      final raw = _prefs?.getString(_prefsKey);
+      if (raw != null) {
+        final saved = jsonDecode(raw) as Map<String, dynamic>;
+        final at = DateTime.fromMillisecondsSinceEpoch((saved['at'] as num).toInt());
+        if (DateTime.now().difference(at) <= restoreWithin) {
+          for (final item in saved['files'] as List<dynamic>) {
+            final entry = item as Map<String, dynamic>;
+            final path = entry['path'] as String;
+            if (!await File(path).exists()) continue;
+            restored.add(
+              await SendFile.fromPath(path, id: entry['id'] as String, name: entry['name'] as String?),
+            );
+          }
+        }
+      }
+    } catch (_) {
+      restored.clear(); // unreadable: start empty
+    }
+    if (!ref.mounted) return;
+    if (restored.isNotEmpty && state.isEmpty) {
+      state = restored;
+    } else if (state.isEmpty) {
+      unawaited(_prefs?.remove(_prefsKey));
+      unawaited(_clearPickerCache());
+    }
+  }
+
+  /// The system picker copies every picked file into the app's cache and never
+  /// removes it. Called when no selection refers to those copies.
+  static Future<void> _clearPickerCache() async {
+    if (kIsWeb || !(Platform.isAndroid || Platform.isIOS)) return;
+    try {
+      await FilePicker.clearTemporaryFiles();
+    } catch (_) {
+      // Best effort.
+    }
+  }
 
   void set(List<SendFile> files) => state = files;
 
@@ -139,7 +231,12 @@ class SelectedFilesNotifier extends Notifier<List<SendFile>> {
 
   void remove(String id) => removeWhere((f) => f.id == id);
 
-  void clear() => state = const [];
+  /// Empties the selection (after a send, or by the user) and removes the
+  /// picker's copies of the files, which are no longer needed.
+  void clear() {
+    state = const [];
+    unawaited(_clearPickerCache());
+  }
 }
 
 final selectedFilesProvider =

@@ -53,6 +53,7 @@
       }
     }
   },
+  "preparingFiles": "جاري تحضير الملفات…",
   "chooseFiles": "اختر ملفات",
   "noFilesSelected": "لم تختر أي ملف بعد",
   "pickFilesFirst": "اختر ملفات أولاً",
