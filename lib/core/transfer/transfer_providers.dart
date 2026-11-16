@@ -147,6 +147,33 @@ final selectedFilesProvider =
       SelectedFilesNotifier.new,
     );
 
+/// A QR code that was scanned before any file was chosen. The picker's Send
+/// button then continues with it, instead of sending the user to the radar to
+/// find the same device again. A code is only good while the receiver's QR
+/// screen is open, so it is forgotten after a few minutes.
+class PendingQrNotifier extends Notifier<PairingPayload?> {
+  static const keepFor = Duration(minutes: 5);
+  DateTime _at = DateTime.fromMillisecondsSinceEpoch(0);
+
+  @override
+  PairingPayload? build() => null;
+
+  void remember(PairingPayload payload) {
+    _at = DateTime.now();
+    state = payload;
+  }
+
+  /// The remembered code if it is still fresh, forgetting it either way.
+  PairingPayload? take() {
+    final payload = state;
+    state = null;
+    if (payload == null || DateTime.now().difference(_at) > keepFor) return null;
+    return payload;
+  }
+}
+
+final pendingQrProvider = NotifierProvider<PendingQrNotifier, PairingPayload?>(PendingQrNotifier.new);
+
 enum SendStatus { idle, connecting, needsPin, sending, done, failed }
 
 class SendJob {

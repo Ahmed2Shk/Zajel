@@ -13,6 +13,7 @@ import '../../core/platform/platform_providers.dart';
 import '../../core/router/app_router.dart';
 import '../../core/transfer/send_client.dart';
 import '../../core/transfer/transfer_providers.dart';
+import '../../core/transport/transport_manager.dart';
 import '../../core/widgets/zajel_widgets.dart';
 import '../../l10n/l10n.dart';
 import 'media_grid.dart';
@@ -69,6 +70,18 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
     } else {
       notifier.removeWhere((f) => f.file.path == app.apkPath);
     }
+  }
+
+  /// Send: to the device whose QR code was scanned just before coming here,
+  /// if there is one; otherwise to the radar to choose a device.
+  void _send() {
+    final scanned = ref.read(pendingQrProvider.notifier).take();
+    if (scanned == null) {
+      context.push(AppRoutes.discovery);
+      return;
+    }
+    ref.read(sendJobProvider.notifier).sendVia([QrRoute(scanned)]);
+    context.pushReplacement(AppRoutes.transfer);
   }
 
   void _review() {
@@ -164,7 +177,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
                   const SizedBox(width: 12),
                   FilledButton(
                     style: FilledButton.styleFrom(minimumSize: const Size(140, 52)),
-                    onPressed: files.isEmpty ? null : () => context.push(AppRoutes.discovery),
+                    onPressed: files.isEmpty ? null : _send,
                     child: Text(l10n.sendCount(files.length)),
                   ),
                 ],

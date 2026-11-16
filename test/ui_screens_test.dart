@@ -378,6 +378,25 @@ void main() {
       await tester.pump(const Duration(seconds: 6)); // let the radar's hint timer end
     });
 
+    testWidgets('Back on the finished screen goes home instead of closing the app', (tester) async {
+      final a = await _makeFile(tester, 'a.bin', 1024);
+      final job = SendJob(
+        status: SendStatus.done,
+        target: _device('Sara phone', 'a'),
+        files: [a],
+        sentPerFile: {a.id: a.size},
+      );
+      final container = await _pump(tester, overrides: [
+        sendJobProvider.overrideWith(() => _FakeSendJob(job)),
+      ]);
+      await _go(tester, container, AppRoutes.done);
+
+      await tester.binding.handlePopRoute(); // the system Back button
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.text('استقبال'), findsOneWidget, reason: 'the home screen');
+    });
+
     testWidgets('a finished send shows the summary', (tester) async {
       final a = await _makeFile(tester, 'a.bin', 1024 * 1024);
       final job = SendJob(

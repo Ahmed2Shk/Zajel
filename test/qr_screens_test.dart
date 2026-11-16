@@ -250,6 +250,33 @@ void main() {
       expect(find.text('اختيار الملفات'), findsOneWidget);
     });
 
+    testWidgets('a code scanned before choosing files is used when Send is pressed', (tester) async {
+      final backend = FakeTransportBackend();
+      final file = await _makeFile(tester, 'a.bin', 1024);
+      final container = await _pump(tester, overrides: [
+        qrScannerBuilderProvider.overrideWithValue(scanner),
+        transportManagerProvider.overrideWithValue(_manager(backend)),
+      ]);
+      await _go(tester, container, AppRoutes.qrScan);
+      await tester.tap(find.text('SCAN_GOOD'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.text('اختيار الملفات'), findsOneWidget);
+
+      // The user picks a file, then presses Send: no second trip to the radar.
+      container.read(selectedFilesProvider.notifier).set([file]);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 5)); // the "pick files first" message goes away
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.text('إرسال (1)'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(backend.calls, contains('join:AndroidShare_1'), reason: 'it goes on with the scanned code');
+      expect(find.text('الأجهزة القريبة'), findsNothing);
+      expect(container.read(pendingQrProvider), isNull, reason: 'a code is used once');
+    });
+
     testWidgets('a valid code with files joins the hotspot and starts sending', (tester) async {
       final backend = FakeTransportBackend();
       final container = await _pump(tester, overrides: [

@@ -51,6 +51,8 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
 
     if (ref.read(selectedFilesProvider).isEmpty) {
       _busy = true;
+      // Keep the code: once files are chosen, Send goes on with it.
+      ref.read(pendingQrProvider.notifier).remember(payload);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.pickFilesFirst)));
       context.pushReplacement(AppRoutes.filePicker);
       return;
