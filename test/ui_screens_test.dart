@@ -17,12 +17,20 @@ import 'package:zajel/features/settings/app_settings.dart';
 import 'support/transfer_harness.dart';
 
 class _FakeSendJob extends SendJobNotifier {
-  _FakeSendJob(this._initial);
+  _FakeSendJob(this._initial, {this.retryable = false});
 
   final SendJob _initial;
+  final bool retryable;
+  var retries = 0;
 
   @override
   SendJob build() => _initial;
+
+  @override
+  bool get canRetry => retryable;
+
+  @override
+  Future<void> retry() async => retries++;
 }
 
 /// Real file IO does not run inside a widget test's fake clock, so it goes
@@ -334,6 +342,40 @@ void main() {
         expect(find.textContaining(message), findsOneWidget, reason: error);
         expect(find.textContaining('Blocked by another session'), findsNothing);
       }
+    });
+
+    testWidgets('after a failure the files stay selected and the send can be tried again', (tester) async {
+      final file = await _makeFile(tester, 'a.bin', 1024);
+      final fake = _FakeSendJob(
+        SendJob(status: SendStatus.failed, target: _device('Anas', 'b'), files: [file], error: 'unreachable'),
+        retryable: true,
+      );
+      final container = await _pump(tester, overrides: [sendJobProvider.overrideWith(() => fake)]);
+      container.read(selectedFilesProvider.notifier).set([file]);
+      await _go(tester, container, AppRoutes.transfer);
+
+      await tester.tap(find.text('حاول مرة ثانية'));
+      await tester.pump();
+      expect(fake.retries, 1);
+      expect(container.read(selectedFilesProvider), hasLength(1));
+    });
+
+    testWidgets('after a failure another device can be chosen without picking the files again', (tester) async {
+      final file = await _makeFile(tester, 'a.bin', 1024);
+      final fake = _FakeSendJob(
+        SendJob(status: SendStatus.failed, target: _device('Anas', 'b'), files: [file], error: 'declined'),
+      );
+      final container = await _pump(tester, overrides: [sendJobProvider.overrideWith(() => fake)]);
+      container.read(selectedFilesProvider.notifier).set([file]);
+      await _go(tester, container, AppRoutes.transfer);
+      expect(find.text('حاول مرة ثانية'), findsNothing, reason: 'nothing to retry for this job');
+
+      await tester.tap(find.text('اختر جهازاً آخر'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.text('الأجهزة القريبة'), findsWidgets, reason: 'the radar is open');
+      expect(container.read(selectedFilesProvider), hasLength(1));
+      await tester.pump(const Duration(seconds: 6)); // let the radar's hint timer end
     });
 
     testWidgets('a finished send shows the summary', (tester) async {

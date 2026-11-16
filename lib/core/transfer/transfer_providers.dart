@@ -197,6 +197,16 @@ class SendJobNotifier extends Notifier<SendJob> {
   PeerEndpoint? _endpoint;
   List<PeerRoute> _lastRoutes = const [];
 
+  /// The routes the user asked for, before any automatic upgrade, so a failed
+  /// send can be tried again exactly as it was started.
+  List<PeerRoute> _requestedRoutes = const [];
+
+  /// A failed send can be started again with the same files and device.
+  bool get canRetry => state.status == SendStatus.failed && _requestedRoutes.isNotEmpty;
+
+  /// Starts the failed send again. The selection is untouched.
+  Future<void> retry() => sendVia(_requestedRoutes);
+
   /// The QR code this send was started from, so a failed join can be retried
   /// after the user joins the hotspot by hand.
   PairingPayload? get lastQrPayload =>
@@ -397,6 +407,7 @@ class SendJobNotifier extends Notifier<SendJob> {
     final run = _run = Object();
     bool live() => identical(_run, run);
     _endpoint = null;
+    _requestedRoutes = routes;
     _lastRoutes = routes;
     final first = routes.first;
     state = SendJob(

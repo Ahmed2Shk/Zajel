@@ -110,6 +110,23 @@ void main() {
     );
   });
 
+  test('a declined send keeps the selection and can be tried again', () async {
+    var asked = 0;
+    final a = await receiver(
+      onIncoming: (t) async => ++asked == 1 ? null : t.files.keys.toSet(),
+    );
+
+    await notifier().sendVia([LanRoute(deviceOf(a))]);
+    expect(job().status, SendStatus.failed);
+    expect(job().error, 'declined');
+    expect(container.read(selectedFilesProvider), hasLength(1), reason: 'nothing to pick again');
+    expect(notifier().canRetry, isTrue);
+
+    await notifier().retry();
+    expect(job().status, SendStatus.done);
+    expect(asked, 2);
+  });
+
   test('a second send does not start while one is running', () async {
     final asked = Completer<void>();
     final decision = Completer<Set<String>?>();

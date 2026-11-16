@@ -110,11 +110,10 @@ class HomeScreen extends ConsumerWidget {
               icon: Icons.north_east,
               title: l10n.send,
               subtitle: l10n.sendSubtitle,
-              onTap: () {
-                // Start from an empty selection, not what a cancelled send left.
-                ref.read(selectedFilesProvider.notifier).clear();
-                context.push(AppRoutes.filePicker);
-              },
+              // The selection is kept: after a failed or cancelled send the
+              // files are still there. It is cleared when a send succeeds, or
+              // by the user from the send bar.
+              onTap: () => context.push(AppRoutes.filePicker),
             ),
             const SizedBox(height: 14),
             _BigAction(

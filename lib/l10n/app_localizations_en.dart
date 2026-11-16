@@ -178,6 +178,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'The transfer service could not start, so nothing can be sent or received right now. Close similar apps, then try again.';
 
   @override
+  String get tryAgain => 'Try again';
+
+  @override
+  String get chooseAnotherDevice => 'Choose another device';
+
+  @override
   String get sendFailed => 'Sending failed';
 
   @override

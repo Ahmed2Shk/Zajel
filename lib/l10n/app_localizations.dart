@@ -416,6 +416,18 @@ abstract class AppLocalizations {
   /// **'تعذّر تشغيل خدمة النقل، فلا يمكن الإرسال ولا الاستقبال الآن. أغلق التطبيقات المشابهة ثم أعد المحاولة.'**
   String get serviceFailed;
 
+  /// No description provided for @tryAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاول مرة ثانية'**
+  String get tryAgain;
+
+  /// No description provided for @chooseAnotherDevice.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر جهازاً آخر'**
+  String get chooseAnotherDevice;
+
   /// No description provided for @sendFailed.
   ///
   /// In ar, this message translates to:

@@ -391,20 +391,52 @@ class _TransferProgressScreenState
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-                child: FilledButton.icon(
-                  style: failed
-                      ? null
-                      : FilledButton.styleFrom(
+                child: failed
+                    // After a failure the files stay selected: try the same
+                    // device again, pick another one, or leave.
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (ref.read(sendJobProvider.notifier).canRetry) ...[
+                            FilledButton.icon(
+                              icon: const Icon(Icons.refresh),
+                              label: Text(l10n.tryAgain),
+                              onPressed: () => ref.read(sendJobProvider.notifier).retry(),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.devices),
+                            label: Text(l10n.chooseAnotherDevice),
+                            onPressed: () {
+                              ref.read(sendJobProvider.notifier).reset();
+                              // Home stays underneath, so Back does not close the app.
+                              context.go(AppRoutes.home);
+                              context.push(AppRoutes.discovery);
+                            },
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              ref.read(sendJobProvider.notifier).reset();
+                              context.go(AppRoutes.home);
+                            },
+                            child: Text(l10n.ok),
+                          ),
+                        ],
+                      )
+                    : FilledButton.icon(
+                        style: FilledButton.styleFrom(
                           backgroundColor: scheme.error,
                           foregroundColor: scheme.onError,
                         ),
-                  icon: Icon(failed ? Icons.check : Icons.close),
-                  onPressed: () async {
-                    await ref.read(sendJobProvider.notifier).cancel();
-                    if (context.mounted) context.go(AppRoutes.home);
-                  },
-                  label: Text(failed ? l10n.ok : l10n.cancel),
-                ),
+                        icon: const Icon(Icons.close),
+                        onPressed: () async {
+                          await ref.read(sendJobProvider.notifier).cancel();
+                          if (context.mounted) context.go(AppRoutes.home);
+                        },
+                        label: Text(l10n.cancel),
+                      ),
               ),
             ],
           ),

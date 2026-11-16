@@ -177,6 +177,12 @@ class AppLocalizationsAr extends AppLocalizations {
       'تعذّر تشغيل خدمة النقل، فلا يمكن الإرسال ولا الاستقبال الآن. أغلق التطبيقات المشابهة ثم أعد المحاولة.';
 
   @override
+  String get tryAgain => 'حاول مرة ثانية';
+
+  @override
+  String get chooseAnotherDevice => 'اختر جهازاً آخر';
+
+  @override
   String get sendFailed => 'فشل الإرسال';
 
   @override
